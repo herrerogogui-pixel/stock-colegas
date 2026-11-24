@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Stock Colegas</title>
+<meta name="theme-color" content="#1e3a8a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Stock Colegas">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; }
+  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: #f3f4f6; color: #111827; padding-bottom: calc(70px + env(safe-area-inset-bottom)); }
+  header { background: #1e3a8a; color: #fff; padding: calc(10px + env(safe-area-inset-top)) 16px 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 20; }
+  header h1 { margin: 0; font-size: 18px; white-space: nowrap; }
+  header .who { font-size: 12px; opacity: .85; text-align: right; }
+  nav.tabs { display: flex; gap: 6px; }
+  nav.tabs button { background: transparent; border: 1px solid #93c5fd; color: #fff; padding: 7px 12px; border-radius: 8px; cursor: pointer; font-size: 14px; white-space: nowrap; }
+  nav.tabs button.active { background: #fff; color: #1e3a8a; }
+  nav.tabs button .ic { margin-right: 4px; }
+  main { padding: 14px 16px; max-width: 1280px; margin: 0 auto; }
+  .card { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.08); margin-bottom: 14px; }
+  .card h3 { margin: 0 0 12px; }
+  .grid-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+  label { font-size: 12px; color: #4b5563; display: flex; flex-direction: column; gap: 4px; }
+  label.inline { flex-direction: row; align-items: center; gap: 8px; font-size: 14px; color: #111827; }
+  input, select, textarea { padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 16px; font-family: inherit; background: #fff; width: 100%; }
+  label.inline input { width: auto; }
+  button { font-family: inherit; }
+  .btn { border: none; padding: 10px 14px; border-radius: 8px; cursor: pointer; font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; }
+  .btn.primary { background: #1e3a8a; color: #fff; }
+  .btn.ghost { background: #e5e7eb; color: #111827; }
+  .btn.wa { background: #25d366; color: #fff; }
+  .btn.danger { background: #fee2e2; color: #991b1b; }
+  .btn.ok { background: #d1fae5; color: #065f46; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .btn.small { padding: 6px 10px; font-size: 13px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .filters { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; align-items: end; }
+  .muted { color: #6b7280; font-size: 13px; }
+  .hidden { display: none !important; }
+  .empty { text-align: center; padding: 30px; color: #6b7280; }
+  .err { color: #b91c1c; font-size: 14px; margin-top: 8px; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .stat { background: #fff; padding: 10px 14px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08); font-size: 12px; color: #4b5563; }
+  .stat b { font-size: 22px; display: block; color: #111827; }
+
+  /* tarjetas de autos */
+  .cars { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+  .car { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.1); display: flex; flex-direction: column; cursor: pointer; transition: transform .1s; }
+  .car:active { transform: scale(.99); }
+  .car .img { aspect-ratio: 4 / 3; background: #e5e7eb center / cover no-repeat; position: relative; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 13px; }
+  .car .badge { position: absolute; top: 8px; left: 8px; background: #f59e0b; color: #fff; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px; }
+  .car .count { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,.6); color: #fff; font-size: 11px; padding: 2px 7px; border-radius: 999px; }
+  .car .mine { position: absolute; top: 8px; right: 8px; background: #1e3a8a; color: #fff; font-size: 11px; padding: 3px 8px; border-radius: 999px; }
+  .car .body { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 3px; flex: 1; }
+  .car .title { font-weight: 700; font-size: 15px; }
+  .car .sub { color: #6b7280; font-size: 13px; }
+  .car .price { font-weight: 800; color: #065f46; font-size: 18px; margin-top: 4px; }
+  .car .foot { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 6px; font-size: 12px; color: #6b7280; gap: 6px; }
+  .old { color: #b91c1c; font-weight: 600; }
+
+  /* modal */
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 40; display: flex; align-items: flex-end; justify-content: center; }
+  .sheet { background: #fff; width: 100%; max-width: 760px; max-height: 94vh; overflow-y: auto; border-radius: 16px 16px 0 0; padding: 16px 16px calc(20px + env(safe-area-inset-bottom)); }
+  @media (min-width: 800px) { .modal { align-items: center; } .sheet { border-radius: 16px; } }
+  .sheet .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+  .sheet h2 { margin: 0; font-size: 19px; }
+  .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; margin: 10px 0; }
+  .ph { position: relative; border-radius: 8px; overflow: hidden; background: #e5e7eb; aspect-ratio: 4 / 3; }
+  .ph img { width: 100%; height: 100%; object-fit: cover; display: block; cursor: zoom-in; }
+  .ph .first { position: absolute; bottom: 4px; left: 4px; background: rgba(30,58,138,.9); color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; }
+  .ph .btns { position: absolute; top: 4px; right: 4px; display: flex; gap: 4px; }
+  .ph .btns button { border: none; border-radius: 6px; padding: 4px 7px; font-size: 12px; cursor: pointer; }
+  .specs { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px 14px; font-size: 14px; margin: 10px 0; }
+  .specs div span { display: block; font-size: 11px; color: #6b7280; text-transform: uppercase; }
+  .box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px; margin: 10px 0; }
+  .uploadBtn { position: relative; overflow: hidden; }
+  .uploadBtn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+  /* visor */
+  #viewer { position: fixed; inset: 0; background: rgba(0,0,0,.92); display: flex; align-items: center; justify-content: center; z-index: 60; }
+  #viewer img { max-width: 96vw; max-height: 84vh; border-radius: 6px; }
+  #viewer .nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,.15); color: #fff; border: none; font-size: 32px; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+  #viewer .prev { left: 8px; } #viewer .next { right: 8px; }
+  #viewer .close { position: absolute; top: calc(12px + env(safe-area-inset-top)); right: 12px; background: rgba(255,255,255,.15); color: #fff; border: none; font-size: 22px; padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+  #viewer .cap { position: absolute; bottom: calc(16px + env(safe-area-inset-bottom)); left: 0; right: 0; text-align: center; color: #fff; font-size: 14px; }
+
+  /* login */
+  #login { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  #login .card { width: 100%; max-width: 380px; }
+  #login h2 { margin: 0 0 4px; }
+  .stack { display: flex; flex-direction: column; gap: 12px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 10px 8px; border-bottom: 1px solid #e5e7eb; text-align: left; vertical-align: middle; }
+  th { font-size: 12px; text-transform: uppercase; color: #6b7280; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .pill.admin { background: #ede9fe; color: #5b21b6; }
+  .pill.colega { background: #dbeafe; color: #1e40af; }
+  .pill.pendiente { background: #fef3c7; color: #92400e; }
+
+  #toast { position: fixed; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: #111827; color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 14px; z-index: 80; max-width: 90vw; text-align: center; }
+
+  /* celular: pestañas abajo */
+  @media (max-width: 799px) {
+    nav.tabs { position: fixed; left: 0; right: 0; bottom: 0; background: #fff; border-top: 1px solid #e5e7eb; padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); justify-content: space-around; z-index: 30; }
+    nav.tabs button { border: none; color: #6b7280; display: flex; flex-direction: column; align-items: center; font-size: 11px; padding: 4px 6px; flex: 1; }
+    nav.tabs button .ic { font-size: 20px; margin: 0; }
+    nav.tabs button.active { background: transparent; color: #1e3a8a; font-weight: 700; }
+    .cars { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .car .title { font-size: 14px; }
+    .car .price { font-size: 16px; }
+    main { padding: 10px; }
+  }
+  .moreBtn { display: none; }
+  @media (max-width: 799px) {
+    .stats { grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 10px; }
+    .stat { padding: 8px 10px; font-size: 11px; }
+    .stat b { font-size: 17px; }
+    .stat:nth-child(n+4) { display: none; }
+    .filters { grid-template-columns: 1fr 1fr; }
+    .filters > label:first-child { grid-column: 1 / -1; }
+    .filters:not(.open) > label:not(:first-child):not(.keep) { display: none; }
+    .moreBtn { display: inline-flex; }
+    .card { padding: 12px; }
+  }
+  @media (max-width: 380px) { .cars { grid-template-columns: 1fr; } }
+  @media (min-width: 800px) { body { padding-bottom: 20px; } }
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div id="login" class="hidden">
+  <div class="card">
+    <h2>🚗 Stock Colegas</h2>
+    <p class="muted" id="loginSub">Entrá con tu usuario y clave.</p>
+    <form class="stack" onsubmit="doLogin(event)">
+      <label>Usuario<input id="lUser" autocomplete="username" autocapitalize="none" required></label>
+      <label>Clave<input id="lPass" type="password" autocomplete="current-password" required></label>
+      <button class="btn primary" type="submit" id="lBtn">Entrar</button>
+      <div id="lErr" class="err"></div>
+    </form>
+    <p class="muted" style="margin-top:16px">¿Es la primera vez? <a href="#" onclick="toggleSignup(event)">Crear el usuario administrador</a></p>
+    <form id="signupForm" class="stack hidden" onsubmit="doSignup(event)">
+      <p class="muted">El <b>primer</b> usuario que se crea queda como administrador. Después, a los colegas los creás vos desde la app.</p>
+      <label>Usuario<input id="sUser" autocapitalize="none" required></label>
+      <label>Clave (mínimo 6)<input id="sPass" type="password" minlength="6" required></label>
+      <button class="btn ghost" type="submit">Crear usuario</button>
+      <div id="sErr" class="err"></div>
+    </form>
+  </div>
+</div>
+
+<div id="pending" class="hidden" style="padding:40px 20px; text-align:center">
+  <h2>Tu usuario todavía no está habilitado</h2>
+  <p class="muted">Pedile al administrador que te habilite y volvé a entrar.</p>
+  <button class="btn ghost" onclick="logout()">Salir</button>
+</div>
+
+<div id="setup" class="hidden" style="padding:40px 20px; max-width:560px; margin:auto">
+  <h2>Falta configurar la app</h2>
+  <p>Abrí el archivo <b>config.js</b> y completá la dirección y la clave <i>anon</i> de tu proyecto de Supabase.</p>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app" class="hidden">
+<header>
+  <h1>🚗 Stock Colegas</h1>
+  <nav class="tabs" id="tabs">
+    <button data-tab="stock" class="active"><span class="ic">🚘</span>Stock</button>
+    <button data-tab="add" class="adminOnly"><span class="ic">➕</span>Cargar</button>
+    <button data-tab="import" class="adminOnly"><span class="ic">📥</span>Excel</button>
+    <button data-tab="dealers" class="adminOnly"><span class="ic">👥</span>Colegas</button>
+    <button data-tab="account"><span class="ic">👤</span>Cuenta</button>
+  </nav>
+  <div class="who" id="who"></div>
+</header>
+
+<main>
+  <!-- STOCK -->
+  <section id="sec-stock">
+    <div class="stats" id="stats"></div>
+    <div class="card">
+      <div class="filters">
+        <label>Buscar<input id="q" placeholder="Marca, modelo, colega..." oninput="render()"></label>
+        <label>Marca<select id="fBrand" onchange="render()"><option value="">Todas</option></select></label>
+        <label>Colega<select id="fDealer" onchange="render()"><option value="">Todos</option></select></label>
+        <label>Estado<select id="fStatus" onchange="render()"><option value="">Todos</option><option>Disponible</option><option>Reservado</option></select></label>
+        <label>Año desde<input type="number" id="fYear" inputmode="numeric" placeholder="2015" oninput="render()"></label>
+        <label>Precio máx. USD<input type="number" id="fMax" inputmode="numeric" placeholder="Sin límite" oninput="render()"></label>
+        <label>Ordenar
+          <select id="fSort" onchange="render()">
+            <option value="price-asc">Precio: menor a mayor</option>
+            <option value="price-desc">Precio: mayor a menor</option>
+            <option value="year-desc">Año: más nuevo</option>
+            <option value="km-asc">Menos km</option>
+            <option value="recent">Precio actualizado hace poco</option>
+            <option value="oldest">Precio más viejo primero</option>
+          </select>
+        </label>
+        <label class="inline colegaOnly keep"><input type="checkbox" id="fMine" onchange="render()"> Solo mis autos</label>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn ghost small moreBtn" onclick="this.closest('.card').querySelector('.filters').classList.toggle('open')">⚙ Filtros</button>
+        <button class="btn ghost small" onclick="clearFilters()">Limpiar</button>
+        <button class="btn ghost small" onclick="reload(true)">↻ Actualizar</button>
+        <button class="btn ghost small" onclick="exportCSV()">Exportar a Excel</button>
+      </div>
+    </div>
+    <div class="cars" id="cars"></div>
+    <div id="emptyMsg" class="empty hidden">No hay autos que coincidan.</div>
+  </section>
+
+  <!-- CARGAR / EDITAR (admin) -->
+  <section id="sec-add" class="hidden">
+    <div class="card">
+      <h3 id="carFormTitle">Cargar auto</h3>
+      <form id="carForm" class="grid-form" onsubmit="saveCar(event)">
+        <input type="hidden" name="id">
+        <label>Colega<select name="owner" id="formOwner" required></select></label>
+        <label>Marca<input name="brand" required placeholder="Toyota" list="brandList"></label>
+        <label>Modelo<input name="model" required placeholder="Corolla"></label>
+        <label>Versión<input name="version" placeholder="XEi 2.0 CVT"></label>
+        <label>Año<input name="year" type="number" inputmode="numeric" required min="1960" max="2035"></label>
+        <label>Km<input name="km" type="number" inputmode="numeric" min="0"></label>
+        <label>Moneda<select name="currency"><option>USD</option><option>ARS</option></select></label>
+        <label>Precio<input name="price" type="number" inputmode="decimal" required min="0" step="any"></label>
+        <label>Color<input name="color"></label>
+        <label>Combustible<select name="fuel"><option>Nafta</option><option>Diésel</option><option>Nafta/GNC</option><option>GNC</option><option>Híbrido</option><option>Eléctrico</option></select></label>
+        <label>Transmisión<select name="gearbox"><option>Manual</option><option>Automática</option></select></label>
+        <label>Estado<select name="status"><option>Disponible</option><option>Reservado</option></select></label>
+        <label style="grid-column: 1 / -1">Notas<input name="notes" placeholder="Papeles al día, un solo dueño, acepta permuta..."></label>
+        <div class="row" style="grid-column: 1 / -1">
+          <button class="btn primary" type="submit" id="carSubmit">Guardar auto</button>
+          <button class="btn ghost hidden" type="button" id="carCancel" onclick="cancelEdit(true)">Cancelar</button>
+        </div>
+      </form>
+      <datalist id="brandList"></datalist>
+      <p class="muted">Las fotos se cargan después, desde la ficha del auto en <b>Stock</b>.</p>
+    </div>
+  </section>
+
+  <!-- IMPORTAR (admin) -->
+  <section id="sec-import" class="hidden">
+    <div class="card">
+      <h3>Cargar o actualizar autos desde Excel</h3>
+      <p class="muted">Subí una planilla (.xlsx o .csv). Obligatorias: <b>Marca, Modelo, Año, Precio</b>. Opcionales: <b>Versión, Km, Moneda, Colega, Color, Combustible, Transmisión, Estado, Notas</b>.<br>
+      La columna <b>Colega</b> puede tener el nombre de la agencia o el usuario. Si el auto ya existe (misma marca, modelo, año y colega) se actualiza; si no, se agrega.</p>
+      <div class="filters">
+        <label>Archivo<input type="file" id="xFile" accept=".xlsx,.csv"></label>
+        <label>Si la fila no dice colega, asignar a<select id="xOwner"></select></label>
+        <label class="inline"><input type="checkbox" id="xAddNew" checked> Agregar autos nuevos</label>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" id="xBtn" onclick="importFile()">Importar</button>
+        <button class="btn ghost" onclick="downloadTemplate()">Descargar planilla modelo</button>
+      </div>
+      <div id="importResult" class="muted" style="margin-top:12px"></div>
+    </div>
+  </section>
+
+  <!-- COLEGAS (admin) -->
+  <section id="sec-dealers" class="hidden">
+    <div class="card">
+      <h3 id="dFormTitle">Crear usuario para un colega</h3>
+      <form id="dForm" class="grid-form" onsubmit="saveDealer(event)">
+        <input type="hidden" name="id">
+        <label class="newOnly">Usuario (para entrar)<input name="username" autocapitalize="none" placeholder="juanperez"></label>
+        <label class="newOnly">Clave inicial (mín. 6)<input name="password" placeholder="mínimo 6 caracteres"></label>
+        <label>Agencia<input name="agency" required></label>
+        <label>Contacto<input name="contact"></label>
+        <label>WhatsApp (con código de país)<input name="phone" inputmode="tel" placeholder="5493515555555"></label>
+        <label>Zona<input name="zone"></label>
+        <label class="editOnly hidden">Permiso<select name="role"><option value="colega">Colega</option><option value="admin">Administrador</option><option value="pendiente">Sin acceso</option></select></label>
+        <div class="row" style="grid-column: 1 / -1">
+          <button class="btn primary" type="submit" id="dSubmit">Crear colega</button>
+          <button class="btn ghost hidden" type="button" id="dCancel" onclick="cancelDealer()">Cancelar</button>
+        </div>
+        <div id="dErr" class="err" style="grid-column: 1 / -1"></div>
+      </form>
+      <p class="muted">Pasale al colega el link de la app, su usuario y su clave. Cada colega ve todo el stock, pero solo puede cambiar el <b>precio</b> y las <b>fotos</b> de sus autos.</p>
+    </div>
+    <div class="card" style="padding:0; overflow-x:auto">
+      <table>
+        <thead><tr><th>Agencia</th><th>Usuario</th><th>WhatsApp</th><th>Permiso</th><th>Autos</th><th></th></tr></thead>
+        <tbody id="dealerBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- CUENTA -->
+  <section id="sec-account" class="hidden">
+    <div class="card">
+      <h3>Mi cuenta</h3>
+      <p id="accInfo"></p>
+      <form class="stack" style="max-width:360px" onsubmit="changeMyPassword(event)">
+        <label>Nueva clave (mín. 6)<input id="newPass" type="password" minlength="6" autocomplete="new-password" required></label>
+        <button class="btn primary" type="submit">Cambiar mi clave</button>
+      </form>
+    </div>
+    <div class="card">
+      <h3>Instalar en el celular</h3>
+      <p class="muted"><b>Android (Chrome):</b> menú ⋮ → <i>Agregar a pantalla principal</i> / <i>Instalar app</i>.<br>
+      <b>iPhone (Safari):</b> botón Compartir → <i>Agregar a inicio</i>.</p>
+      <button class="btn ghost hidden" id="installBtn">Instalar app</button>
+    </div>
+    <button class="btn danger" onclick="logout()">Cerrar sesión</button>
+  </section>
+</main>
+</div>
+
+<!-- ficha del auto -->
+<div id="modal" class="modal hidden" onclick="if(event.target===this) closeModal()">
+  <div class="sheet" id="sheet"></div>
+</div>
+
+<div id="viewer" class="hidden" onclick="if(event.target===this) closeViewer()">
+  <button class="close" onclick="closeViewer()">✕</button>
+  <button class="nav prev" onclick="stepViewer(-1)">‹</button>
+  <img id="viewerImg" alt="Foto">
+  <button class="nav next" onclick="stepViewer(1)">›</button>
+  <div class="cap" id="viewerCap"></div>
+</div>
+
+<div id="toast" class="hidden"></div>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* =================== ESTADO =================== */
+const C = window.CONFIG || {};
+const STALE = C.staleDays || 15;
+const MAX_PHOTOS = 20;
+let sb = null;
+let me = null;            // perfil del usuario logueado
+let profiles = [];        // colegas
+let cars = [];
+let openCarId = null;
+
+const $ = id => document.getElementById(id);
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
+function show(id, on) { $(id).classList.toggle('hidden', !on); }
+let toastT;
+function toast(msg, ms = 2600) { const t = $('toast'); t.textContent = msg; t.classList.remove('hidden'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.add('hidden'), ms); }
+function isAdmin() { return me && me.role === 'admin'; }
+function canEdit(c) { return isAdmin() || (me && c.owner === me.id); }
+function toEmail(u) { u = String(u).trim().toLowerCase(); return u.includes('@') ? u : `${u.replace(/\s+/g, '')}@${C.domain || 'stockcolegas.app'}`; }
+function errMsg(e) {
+  const m = (e && (e.message || e.error_description || e.msg)) || String(e);
+  if (/Invalid login credentials/i.test(m)) return 'Usuario o clave incorrectos.';
+  if (/already registered|already exists/i.test(m)) return 'Ese usuario ya existe.';
+  if (/Password should be at least/i.test(m)) return 'La clave debe tener al menos 6 caracteres.';
+  if (/Failed to fetch|NetworkError/i.test(m)) return 'Sin conexión. Revisá internet y probá de nuevo.';
+  if (/row-level security|permission denied/i.test(m)) return 'No tenés permiso para hacer eso.';
+  return m;
+}
+
+/* =================== UTILIDADES =================== */
+function fmtMoney(v, c) { return (c === 'ARS' ? '$ ' : 'US$ ') + Number(v || 0).toLocaleString('es-AR'); }
+function fmtKm(v) { return Number(v || 0).toLocaleString('es-AR'); }
+function fmtDate(t) { return new Date(t).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' }); }
+function daysAgo(t) { return Math.floor((Date.now() - new Date(t).getTime()) / 86400000); }
+function prof(id) { return profiles.find(p => p.id === id); }
+function agencyName(id) { const p = prof(id); return p ? (p.agency || p.username) : '—'; }
+function carTitle(c) { return `${c.brand} ${c.model}${c.version ? ' ' + c.version : ''}`; }
+function photoUrl(path) { return sb.storage.from('fotos').getPublicUrl(path).data.publicUrl; }
+function norm(s) { return String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim(); }
+
+/* =================== INICIO / LOGIN =================== */
+async function boot() {
+  if (!C.url || /TU-PROYECTO/.test(C.url) || !C.anonKey || /PEGAR/.test(C.anonKey) || !window.supabase) {
+    show('setup', true);
+    if (!window.supabase) $('setup').insertAdjacentHTML('beforeend', '<p class="err">No se pudo cargar Supabase. Revisá la conexión a internet.</p>');
+    return;
+  }
+  sb = window.supabase.createClient(C.url, C.anonKey);
+  const { data } = await sb.auth.getSession();
+  if (data.session) await enter(); else show('login', true);
+}
+
+function toggleSignup(e) { e.preventDefault(); $('signupForm').classList.toggle('hidden'); }
+
+async function doLogin(e) {
+  e.preventDefault();
+  $('lErr').textContent = ''; $('lBtn').disabled = true;
+  const { error } = await sb.auth.signInWithPassword({ email: toEmail($('lUser').value), password: $('lPass').value });
+  $('lBtn').disabled = false;
+  if (error) { $('lErr').textContent = errMsg(error); return; }
+  await enter();
+}
+
+async function doSignup(e) {
+  e.preventDefault();
+  $('sErr').textContent = '';
+  const { data, error } = await sb.auth.signUp({ email: toEmail($('sUser').value), password: $('sPass').value });
+  if (error) { $('sErr').textContent = errMsg(error); return; }
+  if (!data.session) { $('sErr').textContent = 'Usuario creado, pero Supabase pide confirmar el mail. Desactivá "Confirm email" en Supabase (ver la guía) y probá de nuevo.'; return; }
+  await enter();
+}
+
+async function enter() {
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) { show('login', true); return; }
+  const { data, error } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
+  if (error || !data) { show('login', true); $('lErr').textContent = error ? errMsg(error) : 'No se encontró tu perfil. ¿Corriste el archivo SQL en Supabase?'; return; }
+  me = data;
+  show('login', false);
+  if (me.role === 'pendiente') { show('pending', true); return; }
+  show('app', true);
+  document.querySelectorAll('.adminOnly').forEach(el => el.classList.toggle('hidden', !isAdmin()));
+  document.querySelectorAll('.colegaOnly').forEach(el => el.classList.toggle('hidden', isAdmin()));
+  $('who').innerHTML = `${esc(me.agency || me.username)}<br>${isAdmin() ? 'Administrador' : 'Colega'}`;
+  await reload();
+}
+
+async function logout() { await sb.auth.signOut(); location.reload(); }
+
+/* =================== DATOS =================== */
+async function reload(manual) {
+  const [p, c] = await Promise.all([
+    sb.from('profiles').select('*').order('agency', { ascending: true }),
+    sb.from('cars').select('*')
+  ]);
+  if (p.error || c.error) { toast('Error al cargar: ' + errMsg(p.error || c.error), 5000); return; }
+  profiles = p.data; cars = c.data;
+  const meNow = profiles.find(x => x.id === me.id);
+  if (meNow) me = meNow;
+  refreshSelects(); render();
+  if (!$('sec-dealers').classList.contains('hidden')) renderDealers();
+  if (openCarId) { if (cars.some(x => x.id === openCarId)) openCar(openCarId); else closeModal(); }
+  if (manual) toast('Stock actualizado');
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden && me && me.role !== 'pendiente') reload(); });
+
+function members() { return profiles.filter(p => p.role !== 'pendiente'); }
+
+function refreshSelects() {
+  const brands = [...new Set(cars.map(c => c.brand))].sort((a, b) => a.localeCompare(b));
+  const keep = (id, html) => { const s = $(id), v = s.value; s.innerHTML = html; if ([...s.options].some(o => o.value === v)) s.value = v; };
+  keep('fBrand', '<option value="">Todas</option>' + brands.map(b => `<option>${esc(b)}</option>`).join(''));
+  const opts = members().map(p => `<option value="${p.id}">${esc(p.agency || p.username)}</option>`).join('');
+  keep('fDealer', '<option value="">Todos</option>' + opts);
+  keep('formOwner', opts);
+  keep('xOwner', '<option value="">(no importar esas filas)</option>' + opts);
+  $('brandList').innerHTML = brands.map(b => `<option value="${esc(b)}">`).join('');
+}
+
+/* =================== PESTAÑAS =================== */
+$('tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (b) showTab(b.dataset.tab); });
+function showTab(t) {
+  ['stock', 'add', 'import', 'dealers', 'account'].forEach(x => {
+    show('sec-' + x, x === t);
+    document.querySelector(`[data-tab="${x}"]`).classList.toggle('active', x === t);
+  });
+  if (t === 'dealers') renderDealers();
+  if (t === 'account') $('accInfo').innerHTML = `Usuario: <b>${esc(me.username)}</b> · ${isAdmin() ? 'Administrador' : 'Colega'}${me.agency ? ' · ' + esc(me.agency) : ''}`;
+  if (t === 'add' && !$('carForm').id.value) cancelEdit(false);
+  window.scrollTo(0, 0);
+}
+
+/* =================== STOCK =================== */
+function clearFilters() {
+  ['q', 'fYear', 'fMax', 'fBrand', 'fDealer', 'fStatus'].forEach(id => $(id).value = '');
+  $('fMine').checked = false; render();
+}
+function filtered() {
+  const q = norm($('q').value);
+  const brand = $('fBrand').value, dealer = $('fDealer').value, status = $('fStatus').value;
+  const year = parseInt($('fYear').value) || 0;
+  const max = parseFloat($('fMax').value) || Infinity;
+  const mine = !isAdmin() && $('fMine').checked;
+  const list = cars.filter(c => {
+    const text = norm(`${c.brand} ${c.model} ${c.version} ${c.color} ${c.notes} ${agencyName(c.owner)}`);
+    return (!q || q.split(' ').every(w => text.includes(w)))
+      && (!brand || c.brand === brand)
+      && (!dealer || c.owner === dealer)
+      && (!status || c.status === status)
+      && (!mine || c.owner === me.id)
+      && c.year >= year
+      && (c.currency === 'ARS' || Number(c.price) <= max);
+  });
+  const s = $('fSort').value;
+  const cmp = {
+    'price-asc': (a, b) => a.price - b.price, 'price-desc': (a, b) => b.price - a.price,
+    'year-desc': (a, b) => b.year - a.year, 'km-asc': (a, b) => a.km - b.km,
+    'recent': (a, b) => new Date(b.price_updated_at) - new Date(a.price_updated_at),
+    'oldest': (a, b) => new Date(a.price_updated_at) - new Date(b.price_updated_at)
+  }[s];
+  return list.sort(cmp);
+}
+function render() {
+  const list = filtered();
+  $('cars').innerHTML = list.map(c => {
+    const ph = c.photos && c.photos[0];
+    const age = daysAgo(c.price_updated_at);
+    const ageTxt = age > STALE ? `<span class="old">precio de hace ${age} días</span>` : `act. ${fmtDate(c.price_updated_at)}`;
+    return `<div class="car" onclick="openCar('${c.id}')">
+      <div class="img" ${ph ? `style="background-image:url('${esc(photoUrl(ph))}')"` : ''}>${ph ? '' : 'Sin foto'}
+        ${c.status === 'Reservado' ? '<span class="badge">RESERVADO</span>' : ''}
+        ${!isAdmin() && c.owner === me.id ? '<span class="mine">Mío</span>' : ''}
+        ${c.photos && c.photos.length > 1 ? `<span class="count">📷 ${c.photos.length}</span>` : ''}
+      </div>
+      <div class="body">
+        <div class="title">${esc(c.brand)} ${esc(c.model)}</div>
+        <div class="sub">${esc(c.version || '')}</div>
+        <div class="sub">${esc(c.year)} · ${fmtKm(c.km)} km</div>
+        <div class="price">${fmtMoney(c.price, c.currency)}</div>
+        <div class="foot"><span>${esc(agencyName(c.owner))}</span><span>${ageTxt}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+  show('emptyMsg', list.length === 0);
+  const usd = list.filter(c => c.currency === 'USD').map(c => Number(c.price)).filter(Boolean);
+  const avg = usd.length ? Math.round(usd.reduce((a, b) => a + b, 0) / usd.length) : 0;
+  const res = list.filter(c => c.status === 'Reservado').length;
+  const stale = list.filter(c => daysAgo(c.price_updated_at) > STALE).length;
+  $('stats').innerHTML = `
+    <div class="stat">Autos<b>${list.length}</b></div>
+    <div class="stat">Disponibles<b>${list.length - res}</b></div>
+    <div class="stat">Reservados<b>${res}</b></div>
+    <div class="stat">Promedio USD<b>${avg ? avg.toLocaleString('es-AR') : '—'}</b></div>
+    <div class="stat">Precios +${STALE} días<b style="color:${stale ? '#b91c1c' : 'inherit'}">${stale}</b></div>`;
+}
+
+/* =================== FICHA DEL AUTO =================== */
+function openCar(id) {
+  const c = cars.find(x => x.id === id); if (!c) return;
+  openCarId = id;
+  const p = prof(c.owner) || {};
+  const edit = canEdit(c);
+  const photos = c.photos || [];
+  const age = daysAgo(c.price_updated_at);
+  const msg = encodeURIComponent(`Hola ${p.contact || ''}! Consulta por el ${carTitle(c)} ${c.year} (${fmtKm(c.km)} km) a ${fmtMoney(c.price, c.currency)}. ¿Sigue disponible?`);
+  const phone = String(p.phone || '').replace(/\D/g, '');
+  $('sheet').innerHTML = `
+    <div class="top">
+      <div>
+        <h2>${esc(carTitle(c))}</h2>
+        <div class="muted">${esc(c.year)} · ${fmtKm(c.km)} km ${c.status === 'Reservado' ? ' · <b style="color:#b45309">RESERVADO</b>' : ''}</div>
+      </div>
+      <button class="btn ghost small" onclick="closeModal()">✕</button>
+    </div>
+    <div style="font-size:24px; font-weight:800; color:#065f46">${fmtMoney(c.price, c.currency)}</div>
+    <div class="muted">${age > STALE ? `<span class="old">Precio de hace ${age} días</span>` : 'Precio actualizado el ' + fmtDate(c.price_updated_at)}</div>
+
+    <div class="gallery">
+      ${photos.length ? photos.map((ph, i) => `<div class="ph">
+        <img src="${esc(photoUrl(ph))}" loading="lazy" onclick="openViewer('${c.id}',${i})" alt="Foto ${i + 1}">
+        ${i === 0 ? '<span class="first">Principal</span>' : ''}
+        ${edit ? `<div class="btns">${i > 0 ? `<button style="background:#fff" title="Hacer principal" onclick="makeMain('${c.id}',${i})">★</button>` : ''}<button style="background:#fee2e2;color:#991b1b" title="Borrar" onclick="delPhoto('${c.id}',${i})">✕</button></div>` : ''}
+      </div>`).join('') : '<div class="muted">Sin fotos todavía.</div>'}
+    </div>
+    ${edit ? `<div class="row"><span class="btn ghost uploadBtn">📷 Subir fotos<input type="file" accept="image/*" multiple onchange="uploadPhotos('${c.id}', this)"></span><span class="muted" id="upStatus"></span></div>` : ''}
+
+    <div class="specs">
+      <div><span>Colega</span>${esc(p.agency || p.username || '—')}</div>
+      <div><span>Contacto</span>${esc(p.contact || '—')}</div>
+      <div><span>Color</span>${esc(c.color || '—')}</div>
+      <div><span>Combustible</span>${esc(c.fuel || '—')}</div>
+      <div><span>Transmisión</span>${esc(c.gearbox || '—')}</div>
+      <div><span>Zona</span>${esc(p.zone || '—')}</div>
+    </div>
+    ${c.notes ? `<p>📝 ${esc(c.notes)}</p>` : ''}
+
+    ${edit ? `<div class="box">
+      <b>Precio</b>
+      <div class="row" style="margin-top:8px">
+        <select id="mCur" style="width:90px"><option ${c.currency === 'USD' ? 'selected' : ''}>USD</option><option ${c.currency === 'ARS' ? 'selected' : ''}>ARS</option></select>
+        <input id="mPrice" type="number" inputmode="decimal" value="${esc(c.price)}" style="width:160px">
+        <button class="btn primary small" onclick="savePrice('${c.id}')">Guardar precio</button>
+        <button class="btn ok small" onclick="confirmPrice('${c.id}')" title="El precio sigue igual">✔ Sigue igual</button>
+      </div>
+    </div>` : ''}
+
+    <div class="row" style="margin-top:12px">
+      ${phone && c.owner !== me.id ? `<a class="btn wa" target="_blank" href="https://wa.me/${phone}?text=${msg}">WhatsApp al colega</a>` : ''}
+      <button class="btn ghost" onclick="shareCar('${c.id}')">Compartir a cliente</button>
+      ${isAdmin() ? `
+        <button class="btn ghost" onclick="editCar('${c.id}')">Editar datos</button>
+        <button class="btn ghost" onclick="toggleReserved('${c.id}')">${c.status === 'Reservado' ? 'Liberar reserva' : 'Marcar reservado'}</button>
+        <button class="btn danger" onclick="removeCar('${c.id}')">Vendido / quitar</button>` : ''}
+    </div>`;
+  show('modal', true);
+  document.body.style.overflow = 'hidden';
+}
+function closeModal() { openCarId = null; show('modal', false); document.body.style.overflow = ''; }
+
+function patchLocal(row) { const i = cars.findIndex(x => x.id === row.id); if (i > -1) cars[i] = row; render(); if (openCarId === row.id) openCar(row.id); }
+
+async function updateCar(id, fields) {
+  const { data, error } = await sb.from('cars').update(fields).eq('id', id).select().single();
+  if (error) { toast(errMsg(error), 5000); return null; }
+  patchLocal(data); return data;
+}
+async function savePrice(id) {
+  const price = parseFloat($('mPrice').value);
+  if (isNaN(price) || price < 0) { toast('Precio inválido'); return; }
+  if (await updateCar(id, { price, currency: $('mCur').value })) toast('Precio guardado ✔');
+}
+async function confirmPrice(id) {
+  if (await updateCar(id, { price_updated_at: new Date().toISOString() })) toast('Precio confirmado ✔');
+}
+async function toggleReserved(id) {
+  const c = cars.find(x => x.id === id);
+  await updateCar(id, { status: c.status === 'Reservado' ? 'Disponible' : 'Reservado' });
+}
+async function removeCar(id) {
+  const c = cars.find(x => x.id === id);
+  if (!confirm(`¿Quitar ${carTitle(c)} ${c.year} del stock (vendido)? Se borran también sus fotos.`)) return;
+  if (c.photos && c.photos.length) await sb.storage.from('fotos').remove(c.photos);
+  const { error } = await sb.from('cars').delete().eq('id', id);
+  if (error) { toast(errMsg(error), 5000); return; }
+  cars = cars.filter(x => x.id !== id); closeModal(); refreshSelects(); render(); toast('Auto quitado del stock');
+}
+function shareCar(id) {
+  const c = cars.find(x => x.id === id);
+  const v = prompt(`Precio para el cliente (${c.currency}). El colega lo pasa a ${fmtMoney(c.price, c.currency)}:`, c.price);
+  if (v === null) return;
+  const p = parseFloat(String(v).replace(/\./g, '').replace(',', '.'));
+  const text = [
+    `🚗 *${carTitle(c)}*`,
+    `📅 Año ${c.year} · ${fmtKm(c.km)} km`,
+    [c.color, c.fuel, c.gearbox].filter(Boolean).join(' · '),
+    c.notes ? `✅ ${c.notes}` : '',
+    `💲 *${fmtMoney(isNaN(p) ? c.price : p, c.currency)}*`
+  ].filter(Boolean).join('\n');
+  window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+}
+
+/* =================== FOTOS =================== */
+function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const max = 1280, s = Math.min(1, max / Math.max(img.width, img.height));
+      const cv = document.createElement('canvas');
+      cv.width = Math.round(img.width * s); cv.height = Math.round(img.height * s);
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      URL.revokeObjectURL(url);
+      cv.toBlob(b => b ? resolve(b) : reject(new Error('No se pudo comprimir')), 'image/jpeg', 0.75);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('No se pudo leer la imagen')); };
+    img.src = url;
+  });
+}
+async function uploadPhotos(id, input) {
+  const c = cars.find(x => x.id === id);
+  const files = [...input.files].filter(f => f.type.startsWith('image/') || /\.(jpe?g|png|heic|webp)$/i.test(f.name));
+  input.value = '';
+  const list = [...(c.photos || [])];
+  const room = MAX_PHOTOS - list.length;
+  if (room <= 0) { toast(`Máximo ${MAX_PHOTOS} fotos por auto`); return; }
+  const todo = files.slice(0, room);
+  let done = 0, failed = 0;
+  for (const f of todo) {
+    const st = $('upStatus'); if (st) st.textContent = `Subiendo ${done + failed + 1} de ${todo.length}...`;
+    try {
+      const blob = await compressImage(f);
+      const path = `${c.owner}/${c.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+      const { error } = await sb.storage.from('fotos').upload(path, blob, { contentType: 'image/jpeg' });
+      if (error) throw error;
+      list.push(path); done++;
+    } catch (e) { failed++; console.error(e); }
+  }
+  if (done) await updateCar(id, { photos: list });
+  toast(`${done} foto(s) subida(s)` + (failed ? `, ${failed} con error` : '') + (files.length > todo.length ? `. Límite: ${MAX_PHOTOS} por auto` : ''), 4000);
+}
+async function makeMain(id, i) {
+  const c = cars.find(x => x.id === id); const list = [...c.photos];
+  list.unshift(list.splice(i, 1)[0]);
+  await updateCar(id, { photos: list });
+}
+async function delPhoto(id, i) {
+  if (!confirm('¿Borrar esta foto?')) return;
+  const c = cars.find(x => x.id === id); const list = [...c.photos];
+  const [path] = list.splice(i, 1);
+  if (await updateCar(id, { photos: list })) await sb.storage.from('fotos').remove([path]);
+}
+
+/* visor */
+let vCar = null, vIdx = 0;
+function openViewer(id, i) { vCar = id; vIdx = i; drawViewer(); show('viewer', true); }
+function closeViewer() { show('viewer', false); }
+function stepViewer(d) { const n = (cars.find(x => x.id === vCar)?.photos || []).length; if (n) { vIdx = (vIdx + d + n) % n; drawViewer(); } }
+function drawViewer() {
+  const c = cars.find(x => x.id === vCar); const list = c?.photos || [];
+  $('viewerImg').src = list[vIdx] ? photoUrl(list[vIdx]) : '';
+  $('viewerCap').textContent = c ? `${carTitle(c)} ${c.year} — ${vIdx + 1} / ${list.length}` : '';
+}
+document.addEventListener('keydown', e => {
+  if (!$('viewer').classList.contains('hidden')) {
+    if (e.key === 'Escape') closeViewer(); if (e.key === 'ArrowLeft') stepViewer(-1); if (e.key === 'ArrowRight') stepViewer(1);
+  } else if (e.key === 'Escape' && !$('modal').classList.contains('hidden')) closeModal();
+});
+let tx0 = null;
+$('viewer').addEventListener('touchstart', e => { tx0 = e.touches[0].clientX; }, { passive: true });
+$('viewer').addEventListener('touchend', e => { if (tx0 === null) return; const dx = e.changedTouches[0].clientX - tx0; if (Math.abs(dx) > 40) stepViewer(dx < 0 ? 1 : -1); tx0 = null; });
+
+/* =================== CARGAR / EDITAR (admin) =================== */
+async function saveCar(e) {
+  e.preventDefault();
+  const f = Object.fromEntries(new FormData(e.target).entries());
+  if (!f.owner) { toast('Primero creá un colega en la pestaña Colegas', 4000); return; }
+  const row = {
+    owner: f.owner, brand: f.brand.trim(), model: f.model.trim(), version: f.version.trim() || null,
+    year: +f.year, km: +f.km || 0, currency: f.currency, price: +f.price,
+    color: f.color.trim() || null, fuel: f.fuel, gearbox: f.gearbox, status: f.status, notes: f.notes.trim() || null
+  };
+  const btn = $('carSubmit'); btn.disabled = true;
+  const q = f.id ? sb.from('cars').update(row).eq('id', f.id) : sb.from('cars').insert(row);
+  const { data, error } = await q.select().single();
+  btn.disabled = false;
+  if (error) { toast(errMsg(error), 5000); return; }
+  if (f.id) { patchLocal(data); toast('Cambios guardados ✔'); cancelEdit(false); showTab('stock'); openCar(data.id); }
+  else { cars.push(data); refreshSelects(); render(); toast('Auto cargado ✔'); cancelEdit(false); showTab('stock'); openCar(data.id); }
+}
+function editCar(id) {
+  const c = cars.find(x => x.id === id);
+  closeModal(); showTab('add');
+  const f = $('carForm');
+  f.id.value = c.id;
+  ['owner', 'brand', 'model', 'version', 'year', 'km', 'currency', 'price', 'color', 'notes'].forEach(k => f[k].value = c[k] ?? '');
+  f.fuel.value = c.fuel || 'Nafta'; f.gearbox.value = c.gearbox || 'Manual'; f.status.value = c.status || 'Disponible';
+  $('carFormTitle').textContent = 'Editar ' + carTitle(c) + ' ' + c.year;
+  $('carSubmit').textContent = 'Guardar cambios';
+  show('carCancel', true);
+}
+function cancelEdit(goBack) {
+  const f = $('carForm'), owner = f.owner.value;
+  f.reset(); f.id.value = ''; if (owner) f.owner.value = owner;
+  $('carFormTitle').textContent = 'Cargar auto';
+  $('carSubmit').textContent = 'Guardar auto';
+  show('carCancel', false);
+  if (goBack) showTab('stock');
+}
+
+/* =================== COLEGAS (admin) =================== */
+function renderDealers() {
+  $('dealerBody').innerHTML = profiles.map(p => {
+    const n = cars.filter(c => c.owner === p.id).length;
+    return `<tr>
+      <td><b>${esc(p.agency || '—')}</b><br><span class="muted">${esc(p.contact || '')} ${p.zone ? '· ' + esc(p.zone) : ''}</span></td>
+      <td>${esc(p.username)}</td>
+      <td>${esc(p.phone || '')}</td>
+      <td><span class="pill ${esc(p.role)}">${p.role === 'admin' ? 'Admin' : p.role === 'colega' ? 'Colega' : 'Sin acceso'}</span></td>
+      <td>${n}</td>
+      <td><div class="row">
+        <button class="btn ghost small" onclick="editDealer('${p.id}')">Editar</button>
+        ${p.id !== me.id ? `<button class="btn ghost small" onclick="resetPass('${p.id}')">Cambiar clave</button>
+        <button class="btn danger small" onclick="deleteUser('${p.id}')">Borrar</button>` : ''}
+      </div></td></tr>`;
+  }).join('') || '<tr><td colspan="6" class="empty">No hay usuarios.</td></tr>';
+}
+async function saveDealer(e) {
+  e.preventDefault();
+  $('dErr').textContent = '';
+  const f = Object.fromEntries(new FormData(e.target).entries());
+  const info = { agency: f.agency.trim(), contact: f.contact.trim() || null, phone: f.phone.replace(/\D/g, '') || null, zone: f.zone.trim() || null };
+  const btn = $('dSubmit'); btn.disabled = true;
+  try {
+    if (f.id) {
+      if (f.id === me.id && f.role !== 'admin' && !confirm('Te vas a quitar el permiso de administrador. ¿Seguro?')) return;
+      const { error } = await sb.from('profiles').update({ ...info, role: f.role }).eq('id', f.id);
+      if (error) throw error;
+      toast('Colega actualizado ✔');
+    } else {
+      const username = f.username.trim().toLowerCase().replace(/\s+/g, '');
+      if (!username) throw new Error('Poné un usuario');
+      if ((f.password || '').length < 6) throw new Error('La clave debe tener al menos 6 caracteres');
+      // cliente aparte para no cerrar la sesión del admin
+      const tmp = window.supabase.createClient(C.url, C.anonKey, { auth: { persistSession: false, autoRefreshToken: false, storageKey: 'sc-tmp' } });
+      const { data, error } = await tmp.auth.signUp({ email: toEmail(username), password: f.password });
+      if (error) throw error;
+      if (!data.user || (data.user.identities && data.user.identities.length === 0)) throw new Error('Ese usuario ya existe');
+      const { error: e2 } = await sb.from('profiles').update({ ...info, role: 'colega' }).eq('id', data.user.id);
+      if (e2) throw e2;
+      alert(`Colega creado ✔\n\nPasale estos datos:\nLink: ${location.href.split('#')[0]}\nUsuario: ${username}\nClave: ${f.password}`);
+    }
+    cancelDealer();
+    await reload();
+    renderDealers();
+  } catch (err) { $('dErr').textContent = errMsg(err); }
+  finally { btn.disabled = false; }
+}
+function editDealer(id) {
+  const p = prof(id), f = $('dForm');
+  f.id.value = p.id; f.agency.value = p.agency || ''; f.contact.value = p.contact || ''; f.phone.value = p.phone || ''; f.zone.value = p.zone || ''; f.role.value = p.role;
+  document.querySelectorAll('#dForm .newOnly').forEach(el => el.classList.add('hidden'));
+  document.querySelectorAll('#dForm .editOnly').forEach(el => el.classList.remove('hidden'));
+  $('dFormTitle').textContent = 'Editar ' + (p.agency || p.username);
+  $('dSubmit').textContent = 'Guardar cambios'; show('dCancel', true);
+  window.scrollTo(0, 0);
+}
+function cancelDealer() {
+  const f = $('dForm'); f.reset(); f.id.value = '';
+  document.querySelectorAll('#dForm .newOnly').forEach(el => el.classList.remove('hidden'));
+  document.querySelectorAll('#dForm .editOnly').forEach(el => el.classList.add('hidden'));
+  $('dFormTitle').textContent = 'Crear usuario para un colega';
+  $('dSubmit').textContent = 'Crear colega'; show('dCancel', false); $('dErr').textContent = '';
+}
+async function resetPass(id) {
+  const p = prof(id);
+  const pw = prompt(`Nueva clave para ${p.agency || p.username} (mínimo 6):`);
+  if (pw === null) return;
+  if (pw.length < 6) { alert('La clave debe tener al menos 6 caracteres'); return; }
+  const { error } = await sb.rpc('admin_set_password', { target: id, new_password: pw });
+  if (error) { alert(errMsg(error)); return; }
+  alert(`Clave cambiada ✔\nUsuario: ${p.username}\nClave nueva: ${pw}`);
+}
+async function deleteUser(id) {
+  const p = prof(id); const own = cars.filter(c => c.owner === id);
+  if (!confirm(`¿Borrar a ${p.agency || p.username}${own.length ? ` y sus ${own.length} autos` : ''}? No se puede deshacer.`)) return;
+  const paths = own.flatMap(c => c.photos || []);
+  if (paths.length) await sb.storage.from('fotos').remove(paths);
+  const { error } = await sb.rpc('admin_delete_user', { target: id });
+  if (error) { alert(errMsg(error)); return; }
+  toast('Usuario borrado'); await reload(); renderDealers();
+}
+
+/* =================== MI CUENTA =================== */
+async function changeMyPassword(e) {
+  e.preventDefault();
+  const { error } = await sb.auth.updateUser({ password: $('newPass').value });
+  if (error) { toast(errMsg(error), 5000); return; }
+  $('newPass').value = ''; toast('Clave cambiada ✔');
+}
+let installEvt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; show('installBtn', true); });
+$('installBtn').addEventListener('click', async () => { if (!installEvt) return; installEvt.prompt(); installEvt = null; show('installBtn', false); });
+
+/* =================== IMPORTAR EXCEL / CSV =================== */
+function toObjects(grid) {
+  const rows = grid.filter(r => r && r.some(v => String(v ?? '').trim() !== ''));
+  if (!rows.length) return [];
+  const heads = rows[0].map(h => norm(h));
+  return rows.slice(1).map(r => { const o = {}; heads.forEach((h, i) => { if (h) o[h] = r[i] ?? ''; }); return o; });
+}
+function parseCSV(text) {
+  text = text.replace(/^﻿/, '');
+  const first = text.split('\n')[0];
+  const delim = first.split(';').length > first.split(',').length ? ';' : ',';
+  const grid = []; let row = [], cur = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) { if (ch === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+    else if (ch === '"') q = true;
+    else if (ch === delim) { row.push(cur); cur = ''; }
+    else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cur); grid.push(row); row = []; cur = ''; }
+    else cur += ch;
+  }
+  row.push(cur); grid.push(row);
+  return toObjects(grid);
+}
+async function inflateRaw(d) {
+  const s = new Blob([d]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+  return new Uint8Array(await new Response(s).arrayBuffer());
+}
+async function unzip(b) {
+  const dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
+  let e = b.length - 22;
+  while (e >= 0 && dv.getUint32(e, true) !== 0x06054b50) e--;
+  if (e < 0) throw new Error('archivo inválido');
+  const count = dv.getUint16(e + 10, true);
+  let p = dv.getUint32(e + 16, true);
+  const out = {}; const td = new TextDecoder();
+  for (let i = 0; i < count; i++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) break;
+    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true);
+    const nlen = dv.getUint16(p + 28, true), elen = dv.getUint16(p + 30, true), clen = dv.getUint16(p + 32, true);
+    const loc = dv.getUint32(p + 42, true);
+    const name = td.decode(b.subarray(p + 46, p + 46 + nlen));
+    p += 46 + nlen + elen + clen;
+    const start = loc + 30 + dv.getUint16(loc + 26, true) + dv.getUint16(loc + 28, true);
+    const data = b.subarray(start, start + csize);
+    if (method === 0) out[name] = data; else if (method === 8) out[name] = await inflateRaw(data);
+  }
+  return out;
+}
+async function parseXlsx(buf) {
+  const files = await unzip(new Uint8Array(buf));
+  const dec = new TextDecoder(); const shared = [];
+  if (files['xl/sharedStrings.xml']) {
+    const sd = new DOMParser().parseFromString(dec.decode(files['xl/sharedStrings.xml']), 'application/xml');
+    [...sd.getElementsByTagName('si')].forEach(si => shared.push([...si.getElementsByTagName('t')].map(t => t.textContent).join('')));
+  }
+  const sheet = Object.keys(files).filter(n => /^xl\/worksheets\/sheet\d+\.xml$/.test(n))
+    .sort((a, b) => parseInt(a.match(/\d+/)[0]) - parseInt(b.match(/\d+/)[0]))[0];
+  if (!sheet) throw new Error('no se encontró ninguna hoja');
+  const doc = new DOMParser().parseFromString(dec.decode(files[sheet]), 'application/xml');
+  const grid = [];
+  for (const row of doc.getElementsByTagName('row')) {
+    const arr = [];
+    for (const c of row.getElementsByTagName('c')) {
+      let idx = 0; for (const ch of (c.getAttribute('r') || '').replace(/\d/g, '')) idx = idx * 26 + (ch.charCodeAt(0) - 64);
+      const t = c.getAttribute('t'), v = c.getElementsByTagName('v')[0];
+      let val;
+      if (t === 's') val = shared[+(v?.textContent)] ?? '';
+      else if (t === 'inlineStr') val = [...c.getElementsByTagName('t')].map(x => x.textContent).join('');
+      else if (!v) val = '';
+      else val = (t === 'str' || t === 'b') ? v.textContent : Number(v.textContent);
+      arr[idx - 1] = val;
+    }
+    grid.push(arr);
+  }
+  return toObjects(grid);
+}
+function parsePrice(v) {
+  if (typeof v === 'number') return v;
+  let s = String(v).replace(/[^\d.,-]/g, '');
+  if (!s) return NaN;
+  const ld = s.lastIndexOf('.'), lc = s.lastIndexOf(',');
+  if (ld > -1 && lc > -1) s = lc > ld ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+  else if (/[.,]\d{3}([.,]|$)/.test(s)) s = s.replace(/[.,]/g, '');
+  else s = s.replace(',', '.');
+  return parseFloat(s);
+}
+function pick(r, ...keys) { for (const k of keys) if (r[k] !== undefined && String(r[k]).trim() !== '') return String(r[k]).trim(); return ''; }
+function matchFuel(v) { const n = norm(v); if (!n) return null; if (n.includes('gnc') && n.includes('naf')) return 'Nafta/GNC'; if (n.includes('gnc')) return 'GNC'; if (n.startsWith('die') || n.includes('gasoil')) return 'Diésel'; if (n.startsWith('hib')) return 'Híbrido'; if (n.startsWith('ele')) return 'Eléctrico'; return 'Nafta'; }
+async function importFile() {
+  const file = $('xFile').files[0], res = $('importResult');
+  if (!file) { alert('Elegí un archivo primero.'); return; }
+  let rows;
+  try { rows = /\.csv$/i.test(file.name) ? parseCSV(await file.text()) : await parseXlsx(await file.arrayBuffer()); }
+  catch (e) { alert('No se pudo leer el archivo: ' + e.message); return; }
+  if (!rows.length) { alert('El archivo no tiene filas.'); return; }
+  const addNew = $('xAddNew').checked, defOwner = $('xOwner').value;
+  const inserts = [], updates = [], problems = []; let skipped = 0;
+  for (const r of rows) {
+    const brand = pick(r, 'marca'), model = pick(r, 'modelo');
+    const year = parseInt(pick(r, 'ano', 'anio'));
+    const price = parsePrice(pick(r, 'precio'));
+    if (!brand || !model || !year || isNaN(price)) { skipped++; continue; }
+    const version = pick(r, 'version');
+    const dealerTxt = norm(pick(r, 'colega', 'agencia', 'usuario'));
+    let owner = defOwner;
+    if (dealerTxt) {
+      const p = members().find(p => norm(p.agency) === dealerTxt || norm(p.username) === dealerTxt);
+      if (!p) { problems.push(`${brand} ${model} ${year}: no existe el colega "${pick(r, 'colega', 'agencia', 'usuario')}"`); continue; }
+      owner = p.id;
+    }
+    const curRaw = pick(r, 'moneda').toUpperCase();
+    const currency = curRaw ? (/ARS|PESO|^\$$/.test(curRaw) ? 'ARS' : 'USD') : null;
+    const km = parseInt(pick(r, 'km', 'kms', 'kilometros').replace(/\D/g, ''));
+    const extra = {};
+    const color = pick(r, 'color'); if (color) extra.color = color;
+    const fuel = matchFuel(pick(r, 'combustible')); if (fuel) extra.fuel = fuel;
+    const gear = pick(r, 'transmision', 'caja'); if (gear) extra.gearbox = /aut/i.test(gear) ? 'Automática' : 'Manual';
+    const st = pick(r, 'estado'); if (st) extra.status = /res/i.test(st) ? 'Reservado' : 'Disponible';
+    const notes = pick(r, 'notas', 'observaciones'); if (notes) extra.notes = notes;
+    let cands = cars.filter(c => norm(c.brand) === norm(brand) && norm(c.model) === norm(model) && c.year === year && (!owner || c.owner === owner));
+    if (version) { const v = cands.filter(c => norm(c.version) === norm(version)); if (v.length) cands = v; }
+    const car = cands.find(c => !updates.some(u => u.id === c.id));
+    if (car) {
+      updates.push({ id: car.id, fields: { price, ...(currency ? { currency } : {}), ...(isNaN(km) ? {} : { km }), ...(version && !car.version ? { version } : {}), ...extra } });
+      continue;
+    }
+    if (!addNew) { problems.push(`${brand} ${model} ${year}: no está cargado`); continue; }
+    if (!owner) { problems.push(`${brand} ${model} ${year}: sin colega`); continue; }
+    inserts.push({ owner, brand, model, version: version || null, year, km: isNaN(km) ? 0 : km, currency: currency || 'USD', price, fuel: 'Nafta', status: 'Disponible', ...extra });
+  }
+  $('xBtn').disabled = true; res.textContent = 'Importando...';
+  let added = 0, updated = 0;
+  try {
+    for (let i = 0; i < inserts.length; i += 200) {
+      const { data, error } = await sb.from('cars').insert(inserts.slice(i, i + 200)).select('id');
+      if (error) throw error; added += data.length;
+    }
+    for (const u of updates) {
+      const { error } = await sb.from('cars').update(u.fields).eq('id', u.id);
+      if (error) throw error; updated++;
+    }
+  } catch (e) { problems.unshift('ERROR: ' + errMsg(e)); }
+  $('xBtn').disabled = false; $('xFile').value = '';
+  await reload();
+  res.innerHTML = `<b>Listo.</b> Agregados: ${added}. Actualizados: ${updated}. Filas incompletas: ${skipped}.`
+    + (problems.length ? `<br><br><b>No importados (${problems.length}):</b><br>` + problems.slice(0, 40).map(esc).join('<br>') + (problems.length > 40 ? '<br>…' : '') : '');
+}
+
+/* =================== EXPORTAR =================== */
+function downloadBlob(content, name, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type }));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+function toCSV(rows) { return '﻿' + rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')).join('\r\n'); }
+function exportCSV() {
+  const head = ['Marca', 'Modelo', 'Versión', 'Año', 'Km', 'Moneda', 'Precio', 'Colega', 'WhatsApp', 'Color', 'Combustible', 'Transmisión', 'Estado', 'Notas', 'Precio actualizado'];
+  const rows = filtered().map(c => { const p = prof(c.owner) || {}; return [c.brand, c.model, c.version, c.year, c.km, c.currency, c.price, p.agency || p.username, p.phone, c.color, c.fuel, c.gearbox, c.status, c.notes, fmtDate(c.price_updated_at)]; });
+  downloadBlob(toCSV([head, ...rows]), 'stock_colegas.csv', 'text/csv;charset=utf-8');
+}
+function downloadTemplate() {
+  downloadBlob(toCSV([
+    ['Marca', 'Modelo', 'Versión', 'Año', 'Km', 'Moneda', 'Precio', 'Colega', 'Color', 'Combustible', 'Transmisión', 'Estado', 'Notas'],
+    ['Toyota', 'Corolla', 'XEi 2.0 CVT', 2020, 48000, 'USD', 22500, 'Nombre de la agencia', 'Gris', 'Nafta', 'Automática', 'Disponible', 'Un solo dueño']
+  ]), 'planilla_modelo_stock.csv', 'text/csv;charset=utf-8');
+}
+
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+boot();
+</script>
+</body>
+</html>
