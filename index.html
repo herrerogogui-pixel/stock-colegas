@@ -65,6 +65,10 @@
   .car .foot { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 6px; font-size: 12px; color: #6b7280; gap: 6px; }
   .old { color: #b91c1c; font-weight: 600; }
 
+  .car .contact { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .car .contact .btn { flex: 1; padding: 7px 8px; }
+  .cars.list .car .contact { grid-column: 1 / -1; margin-top: 6px; }
+  .cars.list .car .contact .btn { flex: 0 0 auto; }
   /* vista lista */
   .viewBtns { display: inline-flex; border-radius: 8px; overflow: hidden; border: 1px solid #d1d5db; }
   .viewBtns button { border: none; background: #fff; padding: 6px 10px; font-size: 13px; cursor: pointer; color: #374151; }
@@ -520,6 +524,7 @@ function render() {
     const ph = c.photos && c.photos[0];
     const age = daysAgo(c.price_updated_at);
     const ageTxt = age > STALE ? `<span class="old">precio de hace ${age} días</span>` : `act. ${fmtDate(c.price_updated_at)}`;
+    const contact = contactBtns(c);
     return `<div class="car" onclick="openCar('${c.id}')">
       <div class="img" ${ph ? `style="background-image:url('${esc(photoUrl(ph))}')"` : ''}>${ph ? '' : 'Sin foto'}
         ${c.status === 'Reservado' ? '<span class="badge">RESERVADO</span>' : ''}
@@ -532,6 +537,7 @@ function render() {
         <div class="sub">${esc(c.year)} · ${fmtKm(c.km)} km</div>
         <div class="price">${fmtMoney(c.price, c.currency)}</div>
         <div class="foot"><span>${esc(agencyName(c.owner))}</span><span>${ageTxt}</span></div>
+        ${contact}
       </div>
     </div>`;
   }).join('');
@@ -546,6 +552,24 @@ function render() {
     <div class="stat">Reservados<b>${res}</b></div>
     <div class="stat">Promedio USD<b>${avg ? avg.toLocaleString('es-AR') : '—'}</b></div>
     <div class="stat">Precios +${STALE} días<b style="color:${stale ? '#b91c1c' : 'inherit'}">${stale}</b></div>`;
+}
+
+
+/* botones de contacto en cada auto */
+function waLink(c) {
+  const p = prof(c.owner) || {};
+  const phone = String(p.phone || '').replace(/\D/g, '');
+  if (!phone) return null;
+  const msg = encodeURIComponent(`Hola ${p.contact || ''}! Consulta por el ${carTitle(c)} ${c.year} (${fmtKm(c.km)} km) a ${fmtMoney(c.price, c.currency)}. ¿Sigue disponible?`);
+  return { wa: `https://wa.me/${phone}?text=${msg}`, tel: `tel:+${phone}` };
+}
+function contactBtns(c) {
+  if (c.owner === me.id) return '';
+  const l = waLink(c);
+  if (!l) return `<div class="contact"><span class="muted">${isAdmin() ? 'Este colega no tiene WhatsApp cargado' : 'Sin WhatsApp cargado'}</span></div>`;
+  return `<div class="contact" onclick="event.stopPropagation()">
+    <a class="btn wa small" target="_blank" rel="noopener" href="${l.wa}">💬 WhatsApp</a>
+    <a class="btn ghost small" href="${l.tel}">📞 Llamar</a></div>`;
 }
 
 /* =================== FICHA DEL AUTO =================== */
@@ -599,7 +623,7 @@ function openCar(id) {
     </div>` : ''}
 
     <div class="row" style="margin-top:12px">
-      ${phone && c.owner !== me.id ? `<a class="btn wa" target="_blank" href="https://wa.me/${phone}?text=${msg}">WhatsApp al colega</a>` : ''}
+      ${phone && c.owner !== me.id ? `<a class="btn wa" target="_blank" href="https://wa.me/${phone}?text=${msg}">💬 WhatsApp al colega</a><a class="btn ghost" href="tel:+${phone}">📞 Llamar</a>` : ''}
       <button class="btn ghost" onclick="shareCar('${c.id}')">Compartir a cliente</button>
       ${isAdmin() ? `
         <button class="btn ghost" onclick="editCar('${c.id}')">Editar datos</button>
