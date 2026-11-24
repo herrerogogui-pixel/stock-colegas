@@ -65,6 +65,24 @@
   .car .foot { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 6px; font-size: 12px; color: #6b7280; gap: 6px; }
   .old { color: #b91c1c; font-weight: 600; }
 
+  /* vista lista */
+  .viewBtns { display: inline-flex; border-radius: 8px; overflow: hidden; border: 1px solid #d1d5db; }
+  .viewBtns button { border: none; background: #fff; padding: 6px 10px; font-size: 13px; cursor: pointer; color: #374151; }
+  .viewBtns button.on { background: #1e3a8a; color: #fff; }
+  .cars.list { grid-template-columns: 1fr !important; gap: 8px; }
+  .cars.list .car { flex-direction: row; align-items: stretch; }
+  .cars.list .car .img { width: 150px; min-height: 100%; aspect-ratio: 4 / 3; flex-shrink: 0; }
+  .cars.list .car .badge, .cars.list .car .mine { font-size: 10px; padding: 2px 6px; }
+  .cars.list .car .body { display: grid; grid-template-columns: 1fr auto; column-gap: 12px; align-content: center; padding: 8px 12px; }
+  .cars.list .car .title { grid-column: 1; }
+  .cars.list .car .price { grid-column: 2; grid-row: 1 / span 3; align-self: center; margin: 0; text-align: right; }
+  .cars.list .car .foot { grid-column: 1 / -1; padding-top: 2px; margin-top: 0; }
+  @media (max-width: 799px) {
+    .cars.list .car .img { width: 104px; }
+    .cars.list .car .body { grid-template-columns: 1fr; }
+    .cars.list .car .price { grid-column: 1; grid-row: auto; text-align: left; font-size: 15px; }
+    .cars.list .car .foot { display: none; }
+  }
   /* modal */
   .modal { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 40; display: flex; align-items: flex-end; justify-content: center; }
   .sheet { background: #fff; width: 100%; max-width: 760px; max-height: 94vh; overflow-y: auto; border-radius: 16px 16px 0 0; padding: 16px 16px calc(20px + env(safe-area-inset-bottom)); }
@@ -210,6 +228,7 @@
       <div class="row" style="margin-top:10px">
         <button class="btn ghost small moreBtn" onclick="this.closest('.card').querySelector('.filters').classList.toggle('open')">⚙ Filtros</button>
         <button class="btn ghost small" onclick="clearFilters()">Limpiar</button>
+        <span class="viewBtns"><button id="vGrid" onclick="setView('grid')" title="Mosaico">▦ Mosaico</button><button id="vList" onclick="setView('list')" title="Lista">☰ Lista</button></span>
         <button class="btn ghost small" onclick="reload(true)">↻ Actualizar</button>
         <button class="btn ghost small" onclick="exportCSV()">Exportar a Excel</button>
       </div>
@@ -331,7 +350,7 @@
 
 <div id="toast" class="hidden"></div>
 
-<script src="config.js?v=2"></script>
+<script src="config.js?v=3"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* =================== ESTADO =================== */
@@ -1003,6 +1022,17 @@ function downloadTemplate() {
     ['Toyota', 'Corolla', 'XEi 2.0 CVT', 2020, 48000, 'USD', 22500, 'Nombre de la agencia', 'Gris', 'Nafta', 'Automática', 'Disponible', 'Un solo dueño']
   ]), 'planilla_modelo_stock.csv', 'text/csv;charset=utf-8');
 }
+
+
+/* =================== VISTA MOSAICO / LISTA =================== */
+function setView(v) {
+  v = v === 'list' ? 'list' : 'grid';
+  try { localStorage.setItem('sc_view', v); } catch (e) {}
+  $('cars').classList.toggle('list', v === 'list');
+  $('vGrid').classList.toggle('on', v === 'grid');
+  $('vList').classList.toggle('on', v === 'list');
+}
+(function () { let v = 'grid'; try { v = localStorage.getItem('sc_view') || 'grid'; } catch (e) {} setView(v); })();
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 boot();
