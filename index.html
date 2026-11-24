@@ -555,10 +555,23 @@ function render() {
 }
 
 
+
+/* teléfono a formato internacional de WhatsApp (Argentina por defecto) */
+function waPhone(raw) {
+  let d = String(raw || '').replace(/\D/g, '');
+  if (!d) return '';
+  d = d.replace(/^00/, '');
+  if (d.startsWith('549')) return d;
+  if (d.startsWith('54')) return '549' + d.slice(2).replace(/^0/, '').replace(/^(\d{2,4})15/, '$1');
+  d = d.replace(/^0/, '');
+  if (d.length === 12 && /^\d{2,4}15/.test(d)) d = d.replace(/^(\d{2,4})15/, '$1');
+  if (d.length === 10) return '549' + d;
+  return d;
+}
 /* botones de contacto en cada auto */
 function waLink(c) {
   const p = prof(c.owner) || {};
-  const phone = String(p.phone || '').replace(/\D/g, '');
+  const phone = waPhone(p.phone);
   if (!phone) return null;
   const msg = encodeURIComponent(`Hola ${p.contact || ''}! Consulta por el ${carTitle(c)} ${c.year} (${fmtKm(c.km)} km) a ${fmtMoney(c.price, c.currency)}. ¿Sigue disponible?`);
   return { wa: `https://wa.me/${phone}?text=${msg}`, tel: `tel:+${phone}` };
@@ -581,7 +594,7 @@ function openCar(id) {
   const photos = c.photos || [];
   const age = daysAgo(c.price_updated_at);
   const msg = encodeURIComponent(`Hola ${p.contact || ''}! Consulta por el ${carTitle(c)} ${c.year} (${fmtKm(c.km)} km) a ${fmtMoney(c.price, c.currency)}. ¿Sigue disponible?`);
-  const phone = String(p.phone || '').replace(/\D/g, '');
+  const phone = waPhone(p.phone);
   $('sheet').innerHTML = `
     <div class="top">
       <div>
@@ -806,7 +819,7 @@ async function saveDealer(e) {
   e.preventDefault();
   $('dErr').textContent = '';
   const f = Object.fromEntries(new FormData(e.target).entries());
-  const info = { agency: f.agency.trim(), contact: f.contact.trim() || null, phone: f.phone.replace(/\D/g, '') || null, zone: f.zone.trim() || null };
+  const info = { agency: f.agency.trim(), contact: f.contact.trim() || null, phone: waPhone(f.phone) || null, zone: f.zone.trim() || null };
   const btn = $('dSubmit'); btn.disabled = true;
   try {
     if (f.id) {
