@@ -69,6 +69,26 @@
   .car .contact .btn { flex: 1; padding: 7px 8px; }
   .cars.list .car .contact { grid-column: 1 / -1; margin-top: 6px; }
   .cars.list .car .contact .btn { flex: 0 0 auto; }
+  /* financiacion */
+  .finline { font-size: 12px; color: #1e3a8a; background: #eff6ff; border-radius: 6px; padding: 4px 8px; margin-top: 4px; }
+  .fin-table { min-width: 760px; }
+  .fin-table td, .fin-table th { white-space: nowrap; text-align: right; }
+  .fin-table td:first-child, .fin-table th:first-child { text-align: left; white-space: normal; min-width: 170px; }
+  .fin-table .ent { font-weight: 700; }
+  .fin-table .cu { color: #065f46; font-weight: 600; }
+  .fin-table .alt { display: block; font-size: 11px; color: #6b7280; font-weight: 400; }
+  .finbox .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+  .finbox .grid3 div { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px; text-align: center; }
+  .finbox .grid3 b { display: block; font-size: clamp(13px, 3.8vw, 16px); color: #065f46; white-space: nowrap; }
+  .finbox .grid3 div { padding: 8px 4px; }
+  .finbox .grid3 span { font-size: 11px; color: #6b7280; }
+  .ent-card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px; margin-bottom: 10px; background: #f9fafb; }
+  .ent-card .tramo { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+  .ent-card .tramo input { width: 90px; }
+  .ent-card .coefs { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; margin-top: 8px; }
+  .ent-card .coef { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px; }
+  .ent-card .coef .mini { display: flex; gap: 4px; margin-top: 4px; }
+  .ent-card .coef .mini input { font-size: 13px; padding: 6px; }
   /* vista lista */
   .viewBtns { display: inline-flex; border-radius: 8px; overflow: hidden; border: 1px solid #d1d5db; }
   .viewBtns button { border: none; background: #fff; padding: 6px 10px; font-size: 13px; cursor: pointer; color: #374151; }
@@ -200,6 +220,7 @@
     <button data-tab="add" class="adminOnly"><span class="ic">➕</span>Cargar</button>
     <button data-tab="import" class="adminOnly"><span class="ic">📥</span>Excel</button>
     <button data-tab="dealers" class="adminOnly"><span class="ic">👥</span>Colegas</button>
+    <button data-tab="fin"><span class="ic">💳</span>Financ.</button>
     <button data-tab="account"><span class="ic">👤</span>Cuenta</button>
   </nav>
   <div class="who" id="who"></div>
@@ -318,6 +339,37 @@
     </div>
   </section>
 
+  <!-- FINANCIACION -->
+  <section id="sec-fin" class="hidden">
+    <div class="card">
+      <h3>💳 Financiación del stock</h3>
+      <p class="muted">Entrega que tiene que hacer el cliente (precio menos lo máximo que presta alguna entidad) y cuotas con ese monto. <span id="finInfo"></span></p>
+      <div class="row" style="margin-bottom:8px">
+        <label class="inline colegaOnly"><input type="checkbox" id="finMine" onchange="renderFin()"> Solo mis autos</label>
+        <input id="finQ" placeholder="Buscar auto..." oninput="renderFin()" style="max-width:240px">
+      </div>
+      <div style="overflow-x:auto">
+        <table class="fin-table">
+          <thead><tr><th>Vehículo</th><th>Precio</th><th>Financia</th><th>Entrega cliente</th><th>24 cuotas</th><th>36 cuotas</th><th>48 cuotas</th><th>Entidad</th></tr></thead>
+          <tbody id="finBody"></tbody>
+        </table>
+      </div>
+      <p class="muted" style="margin-top:10px">Simulación orientativa con tasa fija. La cuota real la confirma la entidad al cargar la operación con el DNI del cliente. No se calcula para autos en dólares ni para los años que ninguna entidad toma.</p>
+    </div>
+
+    <div class="card adminOnly" id="finAdmin">
+      <h3>Tasas y porcentajes <span class="muted">(solo admin)</span></h3>
+      <p class="muted">Para cada entidad: desde qué año financia y qué porcentaje, y el <b>coeficiente</b> de cada plazo (cuota ÷ monto). Cuando cambien las tasas, hacé una simulación en Finszo, copiá el monto otorgado y la cuota en la calculadora del plazo, y se completa el coeficiente solo.</p>
+      <div id="finEditor"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn ghost" onclick="addEntidad()">+ Agregar entidad</button>
+        <button class="btn primary" onclick="saveFin()">Guardar cambios</button>
+        <button class="btn ghost" onclick="resetFinDefaults()">Volver a los valores del 25/11/2026</button>
+      </div>
+      <div id="finErr" class="err"></div>
+    </div>
+  </section>
+
   <!-- CUENTA -->
   <section id="sec-account" class="hidden">
     <div class="card">
@@ -354,7 +406,7 @@
 
 <div id="toast" class="hidden"></div>
 
-<script src="config.js?v=3"></script>
+<script src="config.js?v=4"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* =================== ESTADO =================== */
@@ -452,11 +504,16 @@ async function reload(manual) {
     sb.from('cars').select('*')
   ]);
   if (p.error || c.error) { toast('Error al cargar: ' + errMsg(p.error || c.error), 5000); return; }
-  profiles = p.data; cars = c.data;
+  profiles = p.data;
+  const cfgRow = c.data.find(x => x.brand === FIN_MARK);
+  cars = c.data.filter(x => x.brand !== FIN_MARK);
+  finRowId = cfgRow ? cfgRow.id : null;
+  finCfg = parseFin(cfgRow && cfgRow.notes) || clone(FIN_DEFAULT);
   const meNow = profiles.find(x => x.id === me.id);
   if (meNow) me = meNow;
   refreshSelects(); render();
   if (!$('sec-dealers').classList.contains('hidden')) renderDealers();
+  if (!$('sec-fin').classList.contains('hidden')) renderFin();
   if (openCarId) { if (cars.some(x => x.id === openCarId)) openCar(openCarId); else closeModal(); }
   if (manual) toast('Stock actualizado');
 }
@@ -478,11 +535,12 @@ function refreshSelects() {
 /* =================== PESTAÑAS =================== */
 $('tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (b) showTab(b.dataset.tab); });
 function showTab(t) {
-  ['stock', 'add', 'import', 'dealers', 'account'].forEach(x => {
+  ['stock', 'add', 'import', 'dealers', 'fin', 'account'].forEach(x => {
     show('sec-' + x, x === t);
     document.querySelector(`[data-tab="${x}"]`).classList.toggle('active', x === t);
   });
   if (t === 'dealers') renderDealers();
+  if (t === 'fin') { renderFin(); if (isAdmin()) renderFinEditor(); }
   if (t === 'account') $('accInfo').innerHTML = `Usuario: <b>${esc(me.username)}</b> · ${isAdmin() ? 'Administrador' : 'Colega'}${me.agency ? ' · ' + esc(me.agency) : ''}`;
   if (t === 'add' && !$('carForm').id.value) cancelEdit(false);
   window.scrollTo(0, 0);
@@ -536,6 +594,7 @@ function render() {
         <div class="sub">${esc(c.version || '')}</div>
         <div class="sub">${esc(c.year)} · ${fmtKm(c.km)} km</div>
         <div class="price">${fmtMoney(c.price, c.currency)}</div>
+        ${finLine(c)}
         <div class="foot"><span>${esc(agencyName(c.owner))}</span><span>${ageTxt}</span></div>
         ${contact}
       </div>
@@ -615,6 +674,8 @@ function openCar(id) {
     </div>
     ${edit ? `<div class="row"><span class="btn ghost uploadBtn">📷 Subir fotos<input type="file" accept="image/*" multiple onchange="uploadPhotos('${c.id}', this)"></span><span class="muted" id="upStatus"></span></div>` : ''}
 
+    ${finBox(c)}
+
     <div class="specs">
       <div><span>Colega</span>${esc(p.agency || p.username || '—')}</div>
       <div><span>Contacto</span>${esc(p.contact || '—')}</div>
@@ -685,9 +746,152 @@ function shareCar(id) {
     `📅 Año ${c.year} · ${fmtKm(c.km)} km`,
     [c.color, c.fuel, c.gearbox].filter(Boolean).join(' · '),
     c.notes ? `✅ ${c.notes}` : '',
-    `💲 *${fmtMoney(isNaN(p) ? c.price : p, c.currency)}*`
+    `💲 *${fmtMoney(isNaN(p) ? c.price : p, c.currency)}*`,
+    finShare({ ...c, price: isNaN(p) ? c.price : p })
   ].filter(Boolean).join('\n');
   window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+}
+
+
+/* =================== FINANCIACIÓN =================== */
+const FIN_MARK = '__CONFIG__';            // fila especial en "cars" donde se guardan las tasas
+const TERMS = [24, 36, 48];
+const FIN_DEFAULT = {
+  actualizado: '2026-11-25',
+  entidades: [
+    { nombre: 'ICBC', tramos: [{ desde: 2013, ltv: 50 }, { desde: 2015, ltv: 60 }, { desde: 2023, ltv: 70 }], coef: { 24: 0.07197, 36: 0.059644, 48: 0.054312 } },
+    { nombre: 'Columbia', tramos: [{ desde: 2014, ltv: 60 }, { desde: 2023, ltv: 70 }], coef: { 24: 0.083181, 36: 0.068786, 48: 0.064171 } },
+    { nombre: 'Finszo', tramos: [{ desde: 2010, ltv: 50 }], coef: { 24: 0.0969 } }
+  ]
+};
+let finCfg = clone(FIN_DEFAULT);
+let finRowId = null;
+function clone(o) { return JSON.parse(JSON.stringify(o)); }
+function parseFin(txt) { try { const j = JSON.parse(txt); return j && Array.isArray(j.entidades) ? j : null; } catch (e) { return null; } }
+
+function ltvFor(ent, year) {
+  let l = 0;
+  for (const t of [...(ent.tramos || [])].sort((a, b) => a.desde - b.desde)) if (year >= Number(t.desde)) l = Number(t.ltv) || 0;
+  return l;
+}
+/* entrega mínima y cuotas de un auto */
+function finCalc(c) {
+  if (!c || c.currency !== 'ARS' || !(Number(c.price) > 0)) return null;
+  const price = Number(c.price);
+  const opts = [];
+  for (const e of finCfg.entidades || []) {
+    const l = ltvFor(e, Number(c.year));
+    if (l > 0) opts.push({ entidad: e.nombre, ltv: l, monto: Math.floor(price * l / 100), coef: e.coef || {} });
+  }
+  if (!opts.length) return null;
+  const max = Math.max(...opts.map(o => o.monto));
+  const top = opts.filter(o => o.monto === max);
+  const cuotas = {};
+  for (const n of TERMS) {
+    const cand = opts.filter(o => Number(o.coef[n]) > 0)
+      .map(o => ({ ...o, cuota: Math.round(o.monto * Number(o.coef[n])) }))
+      .sort((a, b) => b.monto - a.monto || a.cuota - b.cuota);
+    if (cand.length) { const o = cand[0]; cuotas[n] = { cuota: o.cuota, entidad: o.entidad, monto: o.monto, entrega: price - o.monto }; }
+  }
+  const mainEnt = (cuotas[48] && cuotas[48].monto === max && cuotas[48].entidad) || (cuotas[24] && cuotas[24].monto === max && cuotas[24].entidad) || top[0].entidad;
+  return { precio: price, monto: max, ltv: top[0].ltv, entrega: price - max, entidad: mainEnt, cuotas };
+}
+const fm = v => '$ ' + Math.round(v).toLocaleString('es-AR');
+function lastTerm(f) { for (const n of [48, 36, 24]) if (f.cuotas[n]) return n; return null; }
+function finLine(c) {
+  const f = finCalc(c); if (!f) return '';
+  const n = lastTerm(f);
+  return `<div class="finline">💳 Entrega ${fm(f.entrega)}${n ? ` · ${n}× ${fm(f.cuotas[n].cuota)}` : ''}</div>`;
+}
+function finBox(c) {
+  const f = finCalc(c);
+  if (!f) return c.currency === 'ARS' ? `<div class="box finbox"><b>💳 Financiación</b><div class="muted">Ninguna entidad cargada financia autos ${esc(c.year)}.</div></div>` : '';
+  const cell = n => {
+    const q = f.cuotas[n];
+    if (!q) return `<div><span>${n} cuotas</span><b style="color:#9ca3af">—</b><span>no disponible</span></div>`;
+    return `<div><span>${n} cuotas</span><b>${fm(q.cuota)}</b><span>${esc(q.entidad)}${q.monto !== f.monto ? ` · entrega ${fm(q.entrega)}` : ''}</span></div>`;
+  };
+  return `<div class="box finbox">
+    <b>💳 Financiación</b> <span class="muted">· ${esc(f.entidad)} financia el ${f.ltv}%</span>
+    <div class="row" style="margin-top:6px; justify-content:space-between">
+      <div><div class="muted">Entrega del cliente</div><div style="font-size:20px;font-weight:800">${fm(f.entrega)}</div></div>
+      <div style="text-align:right"><div class="muted">Monto a financiar</div><div style="font-size:16px;font-weight:700">${fm(f.monto)}</div></div>
+    </div>
+    <div class="grid3">${TERMS.map(cell).join('')}</div>
+    <div class="muted" style="margin-top:6px">Simulación orientativa, tasa fija. Tasas del ${esc(fmtFinDate())}.</div>
+  </div>`;
+}
+function fmtFinDate() { const d = finCfg.actualizado; return d ? d.split('-').reverse().join('/') : '—'; }
+function finShare(c) {
+  const f = finCalc(c); if (!f) return '';
+  const parts = TERMS.filter(n => f.cuotas[n] && f.cuotas[n].monto === f.monto).map(n => `${n} x ${fm(f.cuotas[n].cuota)}`);
+  return `💳 Financiado: entrega ${fm(f.entrega)}${parts.length ? ' + ' + parts.join(' / ') : ''} (cuotas aprox.)`;
+}
+
+function renderFin() {
+  $('finInfo').textContent = `Tasas del ${fmtFinDate()}.`;
+  const q = norm($('finQ').value);
+  const mine = !isAdmin() && $('finMine').checked;
+  const rows = cars
+    .filter(c => (!mine || c.owner === me.id) && (!q || norm(`${c.brand} ${c.model} ${c.version} ${agencyName(c.owner)}`).includes(q)))
+    .map(c => ({ c, f: finCalc(c) }))
+    .sort((a, b) => (a.f ? a.f.entrega : Infinity) - (b.f ? b.f.entrega : Infinity));
+  $('finBody').innerHTML = rows.map(({ c, f }) => {
+    const name = `<b>${esc(c.brand)} ${esc(c.model)}</b> <span class="muted">${esc(c.version || '')}</span><br><span class="muted">${esc(c.year)} · ${esc(agencyName(c.owner))}</span>`;
+    if (!f) return `<tr onclick="openCar('${c.id}')" style="cursor:pointer"><td>${name}</td><td>${fmtMoney(c.price, c.currency)}</td><td colspan="6" class="muted" style="text-align:left">${c.currency !== 'ARS' ? 'Precio en dólares: no se calcula' : 'Ninguna entidad financia este año'}</td></tr>`;
+    const cu = n => { const x = f.cuotas[n]; if (!x) return '<td class="muted">—</td>'; return `<td class="cu">${fm(x.cuota)}${x.monto !== f.monto ? `<span class="alt">${esc(x.entidad)}, entrega ${fm(x.entrega)}</span>` : ''}</td>`; };
+    return `<tr onclick="openCar('${c.id}')" style="cursor:pointer"><td>${name}</td><td>${fm(f.precio)}</td><td>${f.ltv}% · ${fm(f.monto)}</td><td class="ent">${fm(f.entrega)}</td>${TERMS.map(cu).join('')}<td>${esc(f.entidad)}</td></tr>`;
+  }).join('') || '<tr><td colspan="8" class="empty">No hay autos.</td></tr>';
+}
+
+/* ---- editor (admin) ---- */
+let finDraft = null;
+function renderFinEditor() {
+  if (!finDraft) finDraft = clone(finCfg);
+  $('finEditor').innerHTML = finDraft.entidades.map((e, i) => `
+    <div class="ent-card">
+      <div class="row" style="justify-content:space-between">
+        <input value="${esc(e.nombre)}" oninput="finDraft.entidades[${i}].nombre=this.value" style="max-width:220px;font-weight:700">
+        <button class="btn danger small" onclick="finDraft.entidades.splice(${i},1);renderFinEditor()">Quitar entidad</button>
+      </div>
+      <div class="muted" style="margin:8px 0 4px">Desde qué año y cuánto financia</div>
+      ${(e.tramos || []).map((t, j) => `<div class="tramo">desde <input type="number" inputmode="numeric" value="${esc(t.desde)}" oninput="finDraft.entidades[${i}].tramos[${j}].desde=+this.value"> financia <input type="number" inputmode="numeric" value="${esc(t.ltv)}" oninput="finDraft.entidades[${i}].tramos[${j}].ltv=+this.value"> % <button class="btn ghost small" onclick="finDraft.entidades[${i}].tramos.splice(${j},1);renderFinEditor()">✕</button></div>`).join('')}
+      <button class="btn ghost small" onclick="finDraft.entidades[${i}].tramos.push({desde:new Date().getFullYear(),ltv:50});renderFinEditor()">+ Agregar año</button>
+      <div class="coefs">
+        ${TERMS.map(n => `<div class="coef">
+          <div><b>${n} cuotas</b> · coeficiente</div>
+          <input id="coef_${i}_${n}" type="number" step="any" inputmode="decimal" placeholder="no ofrece" value="${e.coef && e.coef[n] ? esc(e.coef[n]) : ''}" oninput="setCoef(${i},${n},this.value)">
+          <div class="mini"><input type="number" inputmode="numeric" placeholder="monto simulado" id="m_${i}_${n}" oninput="calcCoef(${i},${n})"><input type="number" inputmode="numeric" placeholder="cuota" id="q_${i}_${n}" oninput="calcCoef(${i},${n})"></div>
+        </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+function setCoef(i, n, v) { const x = parseFloat(v); finDraft.entidades[i].coef = finDraft.entidades[i].coef || {}; if (x > 0) finDraft.entidades[i].coef[n] = x; else delete finDraft.entidades[i].coef[n]; }
+function calcCoef(i, n) {
+  const m = parseFloat($(`m_${i}_${n}`).value), q = parseFloat($(`q_${i}_${n}`).value);
+  if (m > 0 && q > 0) { const c = +(q / m).toFixed(6); $(`coef_${i}_${n}`).value = c; setCoef(i, n, c); }
+}
+function addEntidad() { finDraft.entidades.push({ nombre: 'Nueva entidad', tramos: [{ desde: 2015, ltv: 50 }], coef: {} }); renderFinEditor(); }
+function resetFinDefaults() { if (!confirm('¿Volver a las tasas del 25/11/2026? Se pierden los cambios sin guardar.')) return; finDraft = clone(FIN_DEFAULT); renderFinEditor(); }
+async function saveFin() {
+  $('finErr').textContent = '';
+  const cfg = clone(finDraft);
+  cfg.entidades = cfg.entidades.filter(e => String(e.nombre || '').trim());
+  for (const e of cfg.entidades) {
+    e.nombre = e.nombre.trim();
+    e.tramos = (e.tramos || []).filter(t => t.desde > 1950 && t.ltv > 0 && t.ltv <= 100);
+    if (!e.tramos.length) { $('finErr').textContent = `${e.nombre}: falta al menos un año con porcentaje.`; return; }
+  }
+  cfg.actualizado = new Date().toISOString().slice(0, 10);
+  const row = { notes: JSON.stringify(cfg) };
+  const q = finRowId
+    ? sb.from('cars').update(row).eq('id', finRowId)
+    : sb.from('cars').insert({ ...row, owner: me.id, brand: FIN_MARK, model: 'financiacion', year: 0, km: 0, price: 0, currency: 'ARS', status: 'Disponible' });
+  const { data, error } = await q.select().single();
+  if (error) { $('finErr').textContent = errMsg(error); return; }
+  finRowId = data.id; finCfg = cfg; finDraft = null;
+  renderFin(); renderFinEditor(); render();
+  toast('Tasas guardadas ✔ Se recalculó todo el stock');
 }
 
 /* =================== FOTOS =================== */
