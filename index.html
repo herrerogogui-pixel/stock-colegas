@@ -404,9 +404,27 @@
   <div class="cap" id="viewerCap"></div>
 </div>
 
+<div id="flyerModal" class="modal hidden" onclick="if(event.target===this) closeFlyer()">
+  <div class="sheet" style="max-width:560px">
+    <div class="top"><h2>Flyer</h2><button class="btn ghost small" onclick="closeFlyer()">✕</button></div>
+    <div class="row" style="margin-bottom:8px">
+      <label class="inline"><input type="radio" name="flyFmt" value="post" checked onchange="drawFlyer()"> Post (4:5)</label>
+      <label class="inline"><input type="radio" name="flyFmt" value="story" onchange="drawFlyer()"> Historia (9:16)</label>
+      <label class="inline"><input type="checkbox" id="flyPrice" checked onchange="drawFlyer()"> Mostrar precio contado</label>
+    </div>
+    <div id="flyStatus" class="muted">Armando el flyer...</div>
+    <img id="flyImg" alt="Flyer" style="width:100%; border-radius:10px; display:none; box-shadow:0 2px 10px rgba(0,0,0,.15)">
+    <div class="row" style="margin-top:12px">
+      <a class="btn primary" id="flyDl" download="flyer.jpg">⬇ Descargar</a>
+      <button class="btn wa" id="flyShare" onclick="shareFlyer()">Compartir</button>
+    </div>
+    <p class="muted" style="margin-top:8px">La entrega y las cuotas salen de la pestaña Financ. (tasas del <span id="flyDate"></span>).</p>
+  </div>
+</div>
+
 <div id="toast" class="hidden"></div>
 
-<script src="config.js?v=4"></script>
+<script src="config.js?v=5"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* =================== ESTADO =================== */
@@ -699,6 +717,7 @@ function openCar(id) {
     <div class="row" style="margin-top:12px">
       ${phone && c.owner !== me.id ? `<a class="btn wa" target="_blank" href="https://wa.me/${phone}?text=${msg}">💬 WhatsApp al colega</a><a class="btn ghost" href="tel:+${phone}">📞 Llamar</a>` : ''}
       <button class="btn ghost" onclick="shareCar('${c.id}')">Compartir a cliente</button>
+      <button class="btn ghost" onclick="openFlyer('${c.id}')">🖼 Flyer</button>
       ${isAdmin() ? `
         <button class="btn ghost" onclick="editCar('${c.id}')">Editar datos</button>
         <button class="btn ghost" onclick="toggleReserved('${c.id}')">${c.status === 'Reservado' ? 'Liberar reserva' : 'Marcar reservado'}</button>
@@ -894,6 +913,121 @@ async function saveFin() {
   toast('Tasas guardadas ✔ Se recalculó todo el stock');
 }
 
+
+/* =================== FLYER =================== */
+let flyCarId = null, flyBlob = null;
+function openFlyer(id) { flyCarId = id; show('flyerModal', true); $('flyDate').textContent = fmtFinDate(); drawFlyer(); }
+function closeFlyer() { show('flyerModal', false); }
+function loadImg(src) {
+  return new Promise((res) => { const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = () => res(i); i.onerror = () => res(null); i.src = src; });
+}
+function fmtPhone(raw) {
+  const d = waPhone(raw); if (!d) return '';
+  const n = d.startsWith('549') ? d.slice(3) : d;
+  return n.length === 10 ? `${n.slice(0, 3)} ${n.slice(3, 6)}-${n.slice(6)}` : n;
+}
+function fitText(ctx, text, maxW, size, weight, minSize) {
+  let s = size; ctx.font = `${weight} ${s}px system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
+  while (ctx.measureText(text).width > maxW && s > (minSize || 18)) { s -= 2; ctx.font = `${weight} ${s}px system-ui, -apple-system, Segoe UI, Roboto, sans-serif`; }
+  return s;
+}
+function rr(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function coverImg(ctx, img, x, y, w, h) {
+  const s = Math.max(w / img.width, h / img.height), iw = img.width * s, ih = img.height * s;
+  ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  ctx.drawImage(img, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih);
+  ctx.restore();
+}
+async function drawFlyer() {
+  const c = cars.find(x => x.id === flyCarId); if (!c) return;
+  const story = document.querySelector('input[name=flyFmt]:checked').value === 'story';
+  const W = 1080, H = story ? 1920 : 1350;
+  $('flyStatus').style.display = ''; $('flyStatus').textContent = 'Armando el flyer...'; $('flyImg').style.display = 'none';
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const ctx = cv.getContext('2d');
+  const navy = '#0f1f4d', accent = '#ffb703', green = '#22c55e';
+  ctx.fillStyle = navy; ctx.fillRect(0, 0, W, H);
+  const photos = (c.photos || []).slice(0, 3);
+  const imgs = (await Promise.all(photos.map(p => loadImg(photoUrl(p))))).filter(Boolean);
+  const photoH = story ? 860 : 540;
+  if (imgs[0]) coverImg(ctx, imgs[0], 0, 0, W, photoH);
+  else { ctx.fillStyle = '#1e3a8a'; ctx.fillRect(0, 0, W, photoH); ctx.fillStyle = '#93c5fd'; ctx.font = '600 40px system-ui'; ctx.textAlign = 'center'; ctx.fillText('Foto próximamente', W / 2, photoH / 2); ctx.textAlign = 'left'; }
+  // thumbs
+  if (imgs.length >= 3) {
+    const tw = 200, th = 140, gap = 14, ty = photoH - th - 20;
+    [imgs[1], imgs[2]].forEach((im, k) => { const tx = W - 24 - (2 - k) * tw - (1 - k) * gap; ctx.save(); rr(ctx, tx, ty, tw, th, 14); ctx.clip(); coverImg(ctx, im, tx, ty, tw, th); ctx.restore(); ctx.lineWidth = 5; ctx.strokeStyle = '#fff'; rr(ctx, tx, ty, tw, th, 14); ctx.stroke(); });
+  }
+  // fade
+  const g = ctx.createLinearGradient(0, photoH - 220, 0, photoH); g.addColorStop(0, 'rgba(15,31,77,0)'); g.addColorStop(1, 'rgba(15,31,77,1)');
+  ctx.fillStyle = g; ctx.fillRect(0, photoH - 220, W, 220);
+  // agency pill
+  const owner = prof(c.owner) || {};
+  const agency = (owner.agency || owner.username || '').toUpperCase();
+  ctx.font = '800 34px system-ui, sans-serif'; const aw = ctx.measureText(agency).width + 56;
+  ctx.fillStyle = 'rgba(15,31,77,.88)'; rr(ctx, 32, 32, aw, 68, 34); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.fillText(agency, 60, 78);
+  // title
+  let y = photoH + 6; const P = 60, maxW = W - 2 * P;
+  const title = `${c.brand} ${c.model}`.toUpperCase();
+  let s = fitText(ctx, title, maxW, 72, 900, 40); ctx.fillStyle = '#fff'; ctx.fillText(title, P, y + s); y += s + 14;
+  const sub = [c.version, c.year, c.km ? fmtKm(c.km) + ' km' : '', c.fuel === 'Nafta' ? '' : c.fuel, c.gearbox === 'Automática' ? 'Automática' : ''].filter(Boolean).join(' · ');
+  s = fitText(ctx, sub, maxW, 34, 500, 22); ctx.fillStyle = '#c7d2fe'; ctx.fillText(sub, P, y + s); y += s + (story ? 50 : 26);
+  const f = finCalc(c);
+  if (f) {
+    // entrega box
+    const bh = story ? 190 : 156;
+    ctx.fillStyle = accent; rr(ctx, P, y, maxW, bh, 26); ctx.fill();
+    ctx.fillStyle = navy; ctx.font = '800 30px system-ui, sans-serif'; ctx.fillText('LLEVÁTELO CON UNA ENTREGA DE', P + 34, y + 48);
+    s = fitText(ctx, fm(f.entrega), maxW - 68, story ? 96 : 84, 900, 50); ctx.fillText(fm(f.entrega), P + 34, y + 48 + s + 4);
+    y += bh + (story ? 40 : 22);
+    const terms = TERMS.filter(n => f.cuotas[n] && f.cuotas[n].monto === f.monto);
+    if (terms.length) {
+      ctx.fillStyle = '#fff'; ctx.font = '700 30px system-ui, sans-serif'; ctx.fillText('Y EL RESTO EN CUOTAS FIJAS', P, y + 30); y += 46;
+      const gap = 18, cw = (maxW - gap * (terms.length - 1)) / terms.length, ch = story ? 170 : 128;
+      terms.forEach((n, k) => {
+        const x = P + k * (cw + gap);
+        ctx.fillStyle = 'rgba(255,255,255,.10)'; rr(ctx, x, y, cw, ch, 20); ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 2; rr(ctx, x, y, cw, ch, 20); ctx.stroke();
+        ctx.fillStyle = '#c7d2fe'; ctx.font = '700 30px system-ui, sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(`${n} cuotas de`, x + cw / 2, y + 44);
+        s = fitText(ctx, fm(f.cuotas[n].cuota), cw - 30, terms.length > 1 ? 52 : 58, 900, 30); ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
+        ctx.fillText(fm(f.cuotas[n].cuota), x + cw / 2, y + 44 + s + 12); ctx.textAlign = 'left';
+      });
+      y += ch + (story ? 40 : 18);
+    }
+  } else {
+    ctx.fillStyle = accent; rr(ctx, P, y, maxW, 150, 26); ctx.fill();
+    ctx.fillStyle = navy; s = fitText(ctx, fmtMoney(c.price, c.currency), maxW - 72, 90, 900, 40); ctx.fillText(fmtMoney(c.price, c.currency), P + 36, y + 40 + s * .8); y += 174;
+  }
+  if (f && $('flyPrice').checked) { ctx.fillStyle = '#c7d2fe'; ctx.font = '600 30px system-ui, sans-serif'; ctx.fillText(`Precio contado: ${fmtMoney(c.price, c.currency)}`, P, y + 28); y += 44; }
+  // footer
+  const fh = 120, fy = H - fh;
+  ctx.fillStyle = green; ctx.fillRect(0, fy, W, fh);
+  const phone = fmtPhone(owner.phone);
+  ctx.fillStyle = '#fff'; ctx.font = '900 48px system-ui, sans-serif';
+  const ftxt = phone ? `WhatsApp ${phone}` : (owner.agency || '');
+  s = fitText(ctx, ftxt, W - 140, 48, 900, 28); ctx.fillText(ftxt, P, fy + 58);
+  ctx.font = '500 24px system-ui, sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.92)';
+  ctx.fillText([owner.zone, 'Recibimos tu usado'].filter(Boolean).join(' · '), P, fy + 98);
+  // legal
+  ctx.fillStyle = 'rgba(199,210,254,.75)'; ctx.font = '400 20px system-ui, sans-serif';
+  if (f) ctx.fillText(`Financiación sujeta a aprobación crediticia. Cuotas aproximadas con tasa fija al ${fmtFinDate()}.`, P, fy - 18);
+  // output
+  cv.toBlob((b) => {
+    if (!b) { $('flyStatus').textContent = 'No se pudo generar la imagen.'; return; }
+    flyBlob = b; const url = URL.createObjectURL(b);
+    $('flyImg').src = url; $('flyImg').style.display = ''; $('flyStatus').style.display = 'none';
+    const dl = $('flyDl'); dl.href = url; dl.download = `flyer-${(c.brand + '-' + c.model + '-' + c.year).toLowerCase().replace(/[^a-z0-9]+/g, '-')}.jpg`;
+  }, 'image/jpeg', 0.9);
+}
+async function shareFlyer() {
+  if (!flyBlob) return;
+  const c = cars.find(x => x.id === flyCarId);
+  const file = new File([flyBlob], $('flyDl').download || 'flyer.jpg', { type: 'image/jpeg' });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], text: `${carTitle(c)} ${c.year}` }); } catch (e) {}
+  } else { $('flyDl').click(); toast('Tu navegador no comparte imágenes: se descargó para que la mandes'); }
+}
+
 /* =================== FOTOS =================== */
 function compressImage(file) {
   return new Promise((resolve, reject) => {
@@ -956,6 +1090,7 @@ function drawViewer() {
   $('viewerCap').textContent = c ? `${carTitle(c)} ${c.year} — ${vIdx + 1} / ${list.length}` : '';
 }
 document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !$('flyerModal').classList.contains('hidden')) { closeFlyer(); return; }
   if (!$('viewer').classList.contains('hidden')) {
     if (e.key === 'Escape') closeViewer(); if (e.key === 'ArrowLeft') stepViewer(-1); if (e.key === 'ArrowRight') stepViewer(1);
   } else if (e.key === 'Escape' && !$('modal').classList.contains('hidden')) closeModal();
