@@ -458,6 +458,7 @@ function errMsg(e) {
 /* =================== UTILIDADES =================== */
 function fmtMoney(v, c) { return (c === 'ARS' ? '$ ' : 'US$ ') + Number(v || 0).toLocaleString('es-AR'); }
 function fmtKm(v) { return Number(v || 0).toLocaleString('es-AR'); }
+function kmTxt(c, pre = ' · ') { return +c.km > 0 ? `${pre}${fmtKm(c.km)} km` : ''; }
 function fmtDate(t) { return new Date(t).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' }); }
 function daysAgo(t) { return Math.floor((Date.now() - new Date(t).getTime()) / 86400000); }
 function prof(id) { return profiles.find(p => p.id === id); }
@@ -610,7 +611,7 @@ function render() {
       <div class="body">
         <div class="title">${esc(c.brand)} ${esc(c.model)}</div>
         <div class="sub">${esc(c.version || '')}</div>
-        <div class="sub">${esc(c.year)} · ${fmtKm(c.km)} km</div>
+        <div class="sub">${esc(c.year)}${kmTxt(c)}</div>
         <div class="price">${fmtMoney(c.price, c.currency)}</div>
         ${finLine(c)}
         <div class="foot"><span>${esc(agencyName(c.owner))}</span><span>${ageTxt}</span></div>
@@ -650,7 +651,7 @@ function waLink(c) {
   const p = prof(c.owner) || {};
   const phone = waPhone(p.phone);
   if (!phone) return null;
-  const msg = encodeURIComponent(`Hola ${p.contact || ''}! Consulta por el ${carTitle(c)} ${c.year} (${fmtKm(c.km)} km) a ${fmtMoney(c.price, c.currency)}. ¿Sigue disponible?`);
+  const msg = encodeURIComponent(`Hola ${p.contact || ''}! Consulta por el ${carTitle(c)} ${c.year}${kmTxt(c, ' · ')} a ${fmtMoney(c.price, c.currency)}. ¿Sigue disponible?`);
   return { wa: `https://wa.me/${phone}?text=${msg}`, tel: `tel:+${phone}` };
 }
 function contactBtns(c) {
@@ -670,13 +671,13 @@ function openCar(id) {
   const edit = canEdit(c);
   const photos = c.photos || [];
   const age = daysAgo(c.price_updated_at);
-  const msg = encodeURIComponent(`Hola ${p.contact || ''}! Consulta por el ${carTitle(c)} ${c.year} (${fmtKm(c.km)} km) a ${fmtMoney(c.price, c.currency)}. ¿Sigue disponible?`);
+  const msg = encodeURIComponent(`Hola ${p.contact || ''}! Consulta por el ${carTitle(c)} ${c.year}${kmTxt(c, ' · ')} a ${fmtMoney(c.price, c.currency)}. ¿Sigue disponible?`);
   const phone = waPhone(p.phone);
   $('sheet').innerHTML = `
     <div class="top">
       <div>
         <h2>${esc(carTitle(c))}</h2>
-        <div class="muted">${esc(c.year)} · ${fmtKm(c.km)} km ${c.status === 'Reservado' ? ' · <b style="color:#b45309">RESERVADO</b>' : ''}</div>
+        <div class="muted">${esc(c.year)}${kmTxt(c)} ${c.status === 'Reservado' ? ' · <b style="color:#b45309">RESERVADO</b>' : ''}</div>
       </div>
       <button class="btn ghost small" onclick="closeModal()">✕</button>
     </div>
@@ -762,7 +763,7 @@ function shareCar(id) {
   const p = parseFloat(String(v).replace(/\./g, '').replace(',', '.'));
   const text = [
     `🚗 *${carTitle(c)}*`,
-    `📅 Año ${c.year} · ${fmtKm(c.km)} km`,
+    `📅 Año ${c.year}${kmTxt(c)}`,
     [c.color, c.fuel, c.gearbox].filter(Boolean).join(' · '),
     c.notes ? `✅ ${c.notes}` : '',
     `💲 *${fmtMoney(isNaN(p) ? c.price : p, c.currency)}*`,
